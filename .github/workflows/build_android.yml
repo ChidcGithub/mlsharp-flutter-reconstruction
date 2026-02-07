@@ -2,6 +2,8 @@ name: Build Android APK
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
 
@@ -40,4 +42,3 @@ jobs:
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
- 
