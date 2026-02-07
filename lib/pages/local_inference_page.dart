@@ -50,7 +50,8 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['onnx', 'pb', 'tflite'],
+        // 修复：去掉扩展名前面的点，只写 'onnx'、'pb' 等
+        allowedExtensions: ['onnx', 'pb', 'tflite', 'data'],
         dialogTitle: '选择 ONNX 模型',
       );
 
@@ -61,11 +62,18 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
         });
         _addLog('已选择模型: ${result.files.first.name}');
         
+        // 优化提示：关于 .onnx.data 文件
+        if (result.files.first.name.endsWith('.onnx')) {
+          _addLog('💡 提示：如果模型文件很大，请确保对应的 .onnx.data 文件也在同一目录下');
+          _addLog('📌 .onnx 文件包含模型结构，.onnx.data 文件包含权重参数，两者必须配套使用');
+        }
+        
         // 尝试加载模型
         await _loadModel(modelFile.path);
       }
     } catch (e) {
-      _addLog('选择模型失败: $e');
+      _addLog('❌ 选择模型失败: $e');
+      _addLog('💡 提示：请确保只选择 .onnx 文件（不要选择 .onnx.data 文件）');
     }
   }
 
