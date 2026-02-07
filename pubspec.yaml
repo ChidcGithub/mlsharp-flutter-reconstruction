@@ -2,7 +2,7 @@ name: mlsharp_flutter
 description: "MLSharp 3D Maker - Flutter Reconstruction for Snapdragon GPU Acceleration"
 publish_to: 'none'
 
-version: 0.0.1-rc2+1
+version: 0.0.1-rc2+7
 
 environment:
   sdk: ^3.10.8
@@ -23,7 +23,7 @@ dependencies:
   path_provider: ^2.1.0
   intl: ^0.19.0
   file_picker: ^5.3.0
-  onnxruntime: ^1.15.0
+  onnxruntime: any  # 修改为 any 以解决版本冲突
   share_plus: ^6.0.0
 
 dev_dependencies:
