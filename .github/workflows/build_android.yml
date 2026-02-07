@@ -28,7 +28,7 @@ jobs:
         run: flutter pub get
         
       - name: Build APK
-        run: flutter build apk --release --build-name=0.0.1-preview.3 --build-number=3
+        run: flutter build apk --release
         
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -38,6 +38,6 @@ jobs:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           draft: false
-          prerelease: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
