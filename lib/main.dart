@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_settings_provider.dart';
+import 'services/inference_logger.dart';
 import 'pages/home_page.dart';
+import 'pages/local_inference_page.dart';
+import 'pages/terminal_page.dart';
 import 'pages/settings_page.dart';
 
 void main() async {
@@ -10,8 +13,11 @@ void main() async {
   final settingsProvider = AppSettingsProvider();
   await settingsProvider.init();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => settingsProvider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => settingsProvider),
+        ChangeNotifierProvider(create: (_) => InferenceLogger()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -50,6 +56,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<Widget> _pages = [
     const HomePage(),
+    const LocalInferencePage(),
+    const TerminalPage(),
     const SettingsPage(),
   ];
 
@@ -70,12 +78,21 @@ class _MyHomePageState extends State<MyHomePage> {
             label: '主页',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.computer),
+            label: '本地推理',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.terminal),
+            label: '终端',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: '设置',
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
