@@ -53,7 +53,7 @@
 *   **实时终端显示**：提供一个内置终端界面，实时显示推理过程中的日志信息。
 *   **自动化构建与发布**：通过 GitHub Actions 实现 APK 的自动构建和 Release 发布。
 
-## 🛠️ 技术栈
+## 技术栈
 
 *   **前端框架**：Flutter
 *   **3D 模型渲染**：`model_viewer_plus` (基于 Google `<model-viewer>`)，支持 GLB/GLTF 格式。
