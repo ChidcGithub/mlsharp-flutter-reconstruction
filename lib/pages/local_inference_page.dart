@@ -10,7 +10,7 @@ class LocalInferencePage extends StatefulWidget {
   const LocalInferencePage({super.key});
 
   @override
-  State<LocalInferencePage> createState() => _LocalInferencePageState();
+  State<LocalInferencePageState> createState() => _LocalInferencePageState();
 }
 
 class _LocalInferencePageState extends State<LocalInferencePage> {
@@ -48,7 +48,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
 
   Future<void> _pickModel() async {
     try {
-      // 修复：改用 FileType.any 以获得最佳兼容性
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         dialogTitle: '选择 ONNX 模型',
@@ -64,8 +63,10 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
           _addLog('已选择模型: ${result.files.first.name}');
           
           if (fileName.endsWith('.onnx')) {
-            _addLog('💡 提示：如果模型文件很大，请确保对应的 .onnx.data 文件也在同一目录下');
-            _addLog('📌 .onnx 文件包含模型结构，.onnx.data 文件包含权重参数，两者必须配套使用');
+            _addLog('🔍 检测到 ONNX 模型...');
+            _addLog('💡 重要提示：大型模型需要配套的 .onnx.data 权重文件');
+            _addLog('📌 文件结构: .onnx 包含模型结构，.onnx.data 包含权重');
+            _addLog('⚠️  两个文件必须在同一目录，且文件完整');
           }
           
           await _loadModel(modelFile.path);
@@ -84,21 +85,35 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
       setState(() {
         _isInferencing = true;
       });
-      _addLog('正在加载模型...');
+      _addLog('🔄 正在加载模型...');
+      _addLog('📁 模型路径: $modelPath');
+      
+      // 检查配套文件
+      final dataPath = '$modelPath.data';
+      final dataFile = File(dataPath);
+      if (dataFile.existsSync()) {
+        _addLog('✅ 检测到配套权重文件');
+      } else {
+        _addLog('⚠️  未检测到 .data 文件，加载可能失败');
+      }
       
       await _inferenceService.initializeModel(
         modelPath,
         useNpu: _useNpu,
       );
       
-      _addLog('模型加载成功');
-      _addLog('NPU 加速: $_useNpu');
+      _addLog('✅ 模型加载成功');
+      _addLog('🚀 NPU 加速: $_useNpu');
       
       setState(() {
         _isInferencing = false;
       });
     } catch (e) {
-      _addLog('模型加载失败: $e');
+      _addLog('❌ 模型加载失败: $e');
+      _addLog('💡 故障排查:');
+      _addLog('  1. 确保 .onnx 和 .onnx.data 文件在同一目录');
+      _addLog('  2. 检查文件是否完整（通过 USB 重新传输）');
+      _addLog('  3. 查看详细错误信息');
       setState(() {
         _isInferencing = false;
       });
@@ -122,8 +137,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
       });
       _addLog('开始本地推理...');
       
-      // 这是一个示例推理过程
-      // 实际应用中需要根据模型的输入格式进行处理
       final dummyInput = List<List<double>>.generate(
         1,
         (i) => List<double>.generate(224 * 224 * 3, (j) => 0.5),
@@ -162,7 +175,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 模型选择卡片
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -211,7 +223,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
             ),
             const SizedBox(height: 16),
 
-            // 图片选择卡片
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -265,7 +276,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
             ),
             const SizedBox(height: 16),
 
-            // 推理按钮
             if (_isInferencing)
               const Center(
                 child: Column(

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_settings_provider.dart';
+import '../services/backend_api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,7 +17,23 @@ class _HomePageState extends State<HomePage> {
   File? _image;
   String? _modelUrl;
   bool _isGenerating = false;
+  bool _isConnected = false;
   final ImagePicker _picker = ImagePicker();
+  late BackendApiService _apiService;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = BackendApiService();
+    _checkConnection();
+  }
+
+  Future<void> _checkConnection() async {
+    final connected = await _apiService.checkConnection();
+    setState(() {
+      _isConnected = connected;
+    });
+  }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -39,38 +54,30 @@ class _HomePageState extends State<HomePage> {
     }
 
     final backendUrl = context.read<AppSettingsProvider>().backendUrl;
+    _apiService.setBaseUrl(backendUrl);
 
     setState(() {
       _isGenerating = true;
     });
 
     try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$backendUrl/api/predict'),
-      );
-      request.files.add(await http.MultipartFile.fromPath(
-        'file',
-        _image!.path,
-      ));
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseBody = await response.stream.bytesToString();
-        final jsonResponse = json.decode(responseBody);
+      final result = await _apiService.predictImage(_image!);
+      
+      if (result != null) {
         setState(() {
-          _modelUrl = jsonResponse['model_url'];
+          _modelUrl = result['model_url'] as String?;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('3D 模型生成成功！')),
+          const SnackBar(content: Text('✅ 3D 模型生成成功！')),
         );
       } else {
-        throw Exception('服务器返回错误: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ 推理失败，请查看日志了解详情')),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('发生错误: $e')),
+        SnackBar(content: Text('❌ 发生错误: $e')),
       );
     } finally {
       setState(() {
@@ -90,6 +97,54 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 连接状态指示器
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _isConnected ? Colors.green.shade100 : Colors.red.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _isConnected ? Colors.green : Colors.red,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _isConnected ? Icons.check_circle : Icons.error_circle,
+                    color: _isConnected ? Colors.green : Colors.red,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isConnected ? '✅ 后端已连接' : '❌ 后端未连接',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _isConnected ? Colors.green.shade700 : Colors.red.shade700,
+                          ),
+                        ),
+                        Text(
+                          context.read<AppSettingsProvider>().backendUrl,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _isConnected ? Colors.green.shade600 : Colors.red.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: _checkConnection,
+                    tooltip: '重新检查连接',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               flex: 3,
               child: Card(
