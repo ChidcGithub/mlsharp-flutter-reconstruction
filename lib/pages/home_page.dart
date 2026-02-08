@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
@@ -63,21 +63,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _takeScreenshot() async {
-    final status = await Permission.photos.request();
-    if (status.isGranted || status.isLimited) {
+    try {
+      // 检查并请求权限
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        await Gal.requestAccess();
+      }
+
       final image = await _screenshotController.capture();
       if (image != null) {
-        final result = await ImageGallerySaver.saveImage(image);
+        // gal 库需要 Uint8List
+        await Gal.putImageBytes(image);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('截图已保存到相册')),
           );
         }
       }
-    } else {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('需要相册权限才能保存截图')),
+          SnackBar(content: Text('保存失败: $e')),
         );
       }
     }
