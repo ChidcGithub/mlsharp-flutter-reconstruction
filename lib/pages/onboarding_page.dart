@@ -37,6 +37,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           PageView(
@@ -48,29 +49,60 @@ class _OnboardingPageState extends State<OnboardingPage> {
             },
             children: [
               _buildWelcomePage(colorScheme),
-              _buildFeaturePage1(colorScheme),
-              _buildFeaturePage2(colorScheme),
-              _buildSetupPage(colorScheme),
+              _buildFeaturePage(
+                colorScheme: colorScheme,
+                icon: Icons.cloud_upload_outlined,
+                title: '远程推理',
+                description: '连接到电脑上的 Python 后端，享受强大的 GPU 加速。',
+                features: [
+                  '支持 NVIDIA/AMD/Intel GPU',
+                  '自动 GPU 显存管理',
+                  '推理结果实时预览',
+                ],
+              ),
+              _buildFeaturePage(
+                colorScheme: colorScheme,
+                icon: Icons.phone_android_outlined,
+                title: '本地推理',
+                description: '直接在手机上运行 ONNX 模型，无需网络连接。',
+                features: [
+                  '支持 Snapdragon NPU 加速',
+                  '离线推理，隐私保护',
+                  '支持自定义模型导入',
+                ],
+              ),
+              _buildFeaturePage(
+                colorScheme: colorScheme,
+                icon: Icons.settings_suggest_outlined,
+                title: '准备就绪',
+                description: '配置您的后端地址或导入本地模型，开启 3D 创作之旅。',
+                features: [
+                  '支持 Material 3 动态配色',
+                  '详尽的终端日志输出',
+                  '一键导出应用日志',
+                ],
+              ),
             ],
           ),
           // 页面指示器
           Positioned(
-            bottom: 100,
+            bottom: 120,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 4,
-                (index) => Container(
-                  width: _currentPage == index ? 32 : 8,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: _currentPage == index ? 24 : 8,
                   height: 8,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     color: _currentPage == index
                         ? colorScheme.primary
-                        : colorScheme.outlineVariant,
+                        : colorScheme.primary.withOpacity(0.2),
                   ),
                 ),
               ),
@@ -78,14 +110,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           // 底部按钮
           Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
+            bottom: 40,
+            left: 24,
+            right: 24,
             child: Row(
               children: [
                 if (_currentPage > 0)
                   Expanded(
-                    child: OutlinedButton(
+                    child: TextButton(
                       onPressed: () {
                         _pageController.previousPage(
                           duration: const Duration(milliseconds: 300),
@@ -95,9 +127,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       child: const Text('上一步'),
                     ),
                   ),
-                if (_currentPage > 0) const SizedBox(width: 12),
+                if (_currentPage > 0) const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
+                  flex: 2,
+                  child: FilledButton(
                     onPressed: () {
                       if (_currentPage == 3) {
                         _skipOnboarding();
@@ -132,52 +165,60 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildWelcomePage(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary,
-            colorScheme.secondary,
-          ],
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 60),
+          const Spacer(),
           Container(
-            width: 120,
-            height: 120,
+            width: 160,
+            height: 160,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(40),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.auto_awesome,
-              size: 60,
-              color: Colors.white,
+              size: 80,
+              color: colorScheme.onPrimaryContainer,
             ),
           ),
-          const SizedBox(height: 40),
-          const Text(
+          const SizedBox(height: 48),
+          Text(
             'MLSharp 3D Maker',
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: colorScheme.onSurface,
+              letterSpacing: -0.5,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '一键生成高质量 3D 模型',
             style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
+              fontSize: 18,
+              color: colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '基于 Material Design 3 动态配色',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
           ),
           const Spacer(),
         ],
@@ -185,98 +226,67 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  Widget _buildFeaturePage1(ColorScheme colorScheme) {
-    return _buildBaseFeaturePage(
-      colorScheme: colorScheme,
-      icon: Icons.cloud_upload,
-      title: '远程推理',
-      description: '连接到电脑上的 Python 后端，享受强大的 GPU 加速。',
-      features: [
-        '支持 NVIDIA/AMD/Intel GPU',
-        '自动 GPU 显存管理',
-        '推理结果实时预览',
-      ],
-    );
-  }
-
-  Widget _buildFeaturePage2(ColorScheme colorScheme) {
-    return _buildBaseFeaturePage(
-      colorScheme: colorScheme,
-      icon: Icons.phone_android,
-      title: '本地推理',
-      description: '直接在手机上运行 ONNX 模型，无需网络连接。',
-      features: [
-        '支持 Snapdragon NPU 加速',
-        '离线推理，隐私保护',
-        '支持自定义模型导入',
-      ],
-    );
-  }
-
-  Widget _buildSetupPage(ColorScheme colorScheme) {
-    return _buildBaseFeaturePage(
-      colorScheme: colorScheme,
-      icon: Icons.settings_suggest,
-      title: '准备就绪',
-      description: '配置您的后端地址或导入本地模型，开启 3D 创作之旅。',
-      features: [
-        '支持 Material 3 动态配色',
-        '详尽的终端日志输出',
-        '一键导出应用日志',
-      ],
-    );
-  }
-
-  Widget _buildBaseFeaturePage({
+  Widget _buildFeaturePage({
     required ColorScheme colorScheme,
     required IconData icon,
     required String title,
     required String description,
     required List<String> features,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(32),
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Spacer(),
           Container(
-            width: 100,
-            height: 100,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.primaryContainer,
+              color: colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Icon(
               icon,
-              size: 50,
-              color: colorScheme.onPrimaryContainer,
+              size: 40,
+              color: colorScheme.onTertiaryContainer,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             description,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               color: colorScheme.onSurfaceVariant,
+              height: 1.5,
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
           ...features.map((feature) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.check_circle_outline, size: 18, color: colorScheme.primary),
+                Icon(Icons.check_circle, size: 20, color: colorScheme.primary),
                 const SizedBox(width: 12),
-                Text(feature, style: const TextStyle(fontSize: 14)),
+                Expanded(
+                  child: Text(
+                    feature,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
               ],
             ),
           )),
