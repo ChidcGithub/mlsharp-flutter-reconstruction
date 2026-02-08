@@ -24,12 +24,20 @@
 
 # MLSharp 3D Maker - Flutter 重构版
 
+![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-green.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![API](https://img.shields.io/badge/API-RESTful-blueviolet.svg)
+[![Platform: Android](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)](https://www.android.com)
+[![Qualcomm Snapdragon](https://img.shields.io/badge/Supports-Qualcomm_Snapdragon_SDK-ED1C24?logo=qualcomm&logoColor=white)](https://developer.qualcomm.com/)
+[![stars](https://img.shields.io/github/stars/chidcGithub/MLSharp-3D-Maker-GPU)](https://github.com/chidcGithub/MLSharp-3D-Maker-GPU)
+[![GitHub Release (including pre-releases)](https://img.shields.io/github/v/release/chidcGithub/MLSharp-3D-Maker-GPU?include_prereleases&label=latest)](https://github.com/chidcGithub/MLSharp-3D-Maker-GPU/releases)
 
-## 🚀 项目简介
+## 项目简介
 
 **MLSharp 3D Maker**（代号：**Ansharp**）是基于 Flutter 框架对原始 [MLSharp-3D-Maker-GPU](https://github.com/ChidcGithub/MLSharp-3D-Maker-GPU) 项目的重构版本。它旨在提供一个跨平台、高性能的移动端应用，用于从单张照片生成高质量的 3D 高斯泼溅（3D Gaussian Splatting）模型。本重构版特别优化了对高通骁龙（Snapdragon）NPU 的支持，以实现更快的本地推理速度。
 
-## ✨ 主要特性
+## 主要特性
 
 *   **跨平台支持**：基于 Flutter 构建，可轻松部署到 Android、iOS 等平台。
 *   **本地 ONNX 推理**：集成 `onnxruntime`，支持在设备本地运行 ONNX 格式的 3D 模型。
@@ -53,7 +61,7 @@
 *   **状态管理**：`provider`
 *   **其他核心库**：`image_picker`, `file_picker`, `shared_preferences`, `logger`, `package_info_plus`, `share_plus` 等。
 
-## 🚀 快速开始
+## 快速开始
 
 ### 前提条件
 
@@ -82,7 +90,7 @@ flutter pub get
 flutter run
 ```
 
-## 💡 使用指南
+## 使用指南
 
 ### 本地推理
 
@@ -105,7 +113,7 @@ flutter run
 *   导出应用日志。
 *   查看应用的版本信息和制作人。
 
-## ⚙️ GitHub Actions 自动化
+## GitHub Actions 自动化
 
 本项目配置了 GitHub Actions，实现 APK 的自动构建和发布：
 
@@ -114,11 +122,11 @@ flutter run
 
 您可以在 [Actions](https://github.com/ChidcGithub/mlsharp-flutter-reconstruction/actions) 页面查看构建状态，并在 [Releases](https://github.com/ChidcGithub/mlsharp-flutter-reconstruction/releases) 页面下载最新的 APK。
 
-## 🤝 贡献
+## 贡献
 
 欢迎所有形式的贡献！如果您有任何建议、功能请求或 Bug 报告，请随时提交 Issue 或 Pull Request。
 
-## 📄 许可证
+## 许可证
 
 本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。
 
