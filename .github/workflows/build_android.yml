@@ -28,6 +28,13 @@ jobs:
           
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Get version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
         
       - name: Build APK
         run: flutter build apk --release
@@ -37,7 +44,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
-          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Development Build' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || steps.get_version.outputs.VERSION }}
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
           draft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
