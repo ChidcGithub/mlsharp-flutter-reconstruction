@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
     if (status.isGranted || status.isLimited) {
       final image = await _screenshotController.capture();
       if (image != null) {
-        final result = await ImageGallery_saver.saveImage(image);
+        final result = await ImageGallerySaver.saveImage(image);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('截图已保存到相册')),
