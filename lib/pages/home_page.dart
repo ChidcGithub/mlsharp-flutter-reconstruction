@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
               child: Row(
                 children: [
                   Icon(
-                    _isConnected ? Icons.check_circle : Icons.error_circle,
+                    _isConnected ? Icons.check_circle : Icons.error,
                     color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
                     size: 24,
                   ),

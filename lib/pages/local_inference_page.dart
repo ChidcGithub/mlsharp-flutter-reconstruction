@@ -10,7 +10,7 @@ class LocalInferencePage extends StatefulWidget {
   const LocalInferencePage({super.key});
 
   @override
-  State<LocalInferencePageState> createState() => _LocalInferencePageState();
+  State<LocalInferencePage> createState() => _LocalInferencePageState();
 }
 
 class _LocalInferencePageState extends State<LocalInferencePage> {

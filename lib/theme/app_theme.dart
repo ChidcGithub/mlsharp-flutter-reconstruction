@@ -33,7 +33,7 @@ class AppTheme {
         ),
       ),
       // 卡片样式
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -136,7 +136,7 @@ class AppTheme {
         ),
       ),
       // 卡片样式
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
