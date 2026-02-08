@@ -34,6 +34,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -45,10 +47,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
               });
             },
             children: [
-              _buildWelcomePage(),
-              _buildFeaturePage1(),
-              _buildFeaturePage2(),
-              _buildSetupPage(),
+              _buildWelcomePage(colorScheme),
+              _buildFeaturePage1(colorScheme),
+              _buildFeaturePage2(colorScheme),
+              _buildSetupPage(colorScheme),
             ],
           ),
           // 页面指示器
@@ -67,8 +69,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     color: _currentPage == index
-                        ? const Color(0xFF00A8E8)
-                        : const Color(0xFFE0E0E0),
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant,
                   ),
                 ),
               ),
@@ -129,15 +131,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  Widget _buildWelcomePage() {
+  Widget _buildWelcomePage(ColorScheme colorScheme) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF00A8E8),
-            Color(0xFF00D4FF),
+            colorScheme.primary,
+            colorScheme.secondary,
           ],
         ),
       ),
@@ -163,7 +165,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             'MLSharp 3D Maker',
             style: TextStyle(
               fontSize: 32,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
@@ -173,306 +175,114 @@ class _OnboardingPageState extends State<OnboardingPage> {
             '一键生成高质量 3D 模型',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w400,
               color: Colors.white70,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              '基于 Apple Sharp 模型的 3D 高斯泼溅生成工具',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: Colors.white60,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
           const Spacer(),
         ],
       ),
     );
   }
 
-  Widget _buildFeaturePage1() {
+  Widget _buildFeaturePage1(ColorScheme colorScheme) {
+    return _buildBaseFeaturePage(
+      colorScheme: colorScheme,
+      icon: Icons.cloud_upload,
+      title: '远程推理',
+      description: '连接到电脑上的 Python 后端，享受强大的 GPU 加速。',
+      features: [
+        '支持 NVIDIA/AMD/Intel GPU',
+        '自动 GPU 显存管理',
+        '推理结果实时预览',
+      ],
+    );
+  }
+
+  Widget _buildFeaturePage2(ColorScheme colorScheme) {
+    return _buildBaseFeaturePage(
+      colorScheme: colorScheme,
+      icon: Icons.phone_android,
+      title: '本地推理',
+      description: '直接在手机上运行 ONNX 模型，无需网络连接。',
+      features: [
+        '支持 Snapdragon NPU 加速',
+        '离线推理，隐私保护',
+        '支持自定义模型导入',
+      ],
+    );
+  }
+
+  Widget _buildSetupPage(ColorScheme colorScheme) {
+    return _buildBaseFeaturePage(
+      colorScheme: colorScheme,
+      icon: Icons.settings_suggest,
+      title: '准备就绪',
+      description: '配置您的后端地址或导入本地模型，开启 3D 创作之旅。',
+      features: [
+        '支持 Material 3 动态配色',
+        '详尽的终端日志输出',
+        '一键导出应用日志',
+      ],
+    );
+  }
+
+  Widget _buildBaseFeaturePage({
+    required ColorScheme colorScheme,
+    required IconData icon,
+    required String title,
+    required String description,
+    required List<String> features,
+  }) {
     return Container(
-      color: Colors.white,
+      padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 60),
           Container(
             width: 100,
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF00A8E8).withOpacity(0.1),
+              color: colorScheme.primaryContainer,
             ),
-            child: const Icon(
-              Icons.cloud_upload,
+            child: Icon(
+              icon,
               size: 50,
-              color: Color(0xFF00A8E8),
+              color: colorScheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: 40),
-          const Text(
-            '远程推理',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: const [
-                Text(
-                  '连接到电脑上的 Python 后端，享受强大的 GPU 加速。',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF666666),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  '✓ 支持 NVIDIA/AMD/Intel GPU',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF00A8E8),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '✓ 自动 GPU 显存管理',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF00A8E8),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '✓ 推理结果实时预览',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF00A8E8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeaturePage2() {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 60),
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF7B2CBF).withOpacity(0.1),
-            ),
-            child: const Icon(
-              Icons.phone_android,
-              size: 50,
-              color: Color(0xFF7B2CBF),
-            ),
-          ),
-          const SizedBox(height: 40),
-          const Text(
-            '本地推理',
+          Text(
+            description,
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              fontSize: 14,
+              color: colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: const [
-                Text(
-                  '直接在手机上运行 ONNX 模型，无需网络连接。',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF666666),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  '✓ 支持 Snapdragon NPU 加速',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF7B2CBF),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '✓ 离线推理，隐私保护',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF7B2CBF),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '✓ 快速响应，低功耗',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF7B2CBF),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSetupPage() {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 60),
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF00D4FF).withOpacity(0.1),
-            ),
-            child: const Icon(
-              Icons.settings,
-              size: 50,
-              color: Color(0xFF00D4FF),
-            ),
-          ),
-          const SizedBox(height: 40),
-          const Text(
-            '快速开始',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
-            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
+          ...features.map((feature) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
               children: [
-                _buildSetupStep(
-                  '1',
-                  '选择模式',
-                  '选择远程推理或本地推理',
-                ),
-                const SizedBox(height: 20),
-                _buildSetupStep(
-                  '2',
-                  '配置连接',
-                  '在设置中输入后端地址',
-                ),
-                const SizedBox(height: 20),
-                _buildSetupStep(
-                  '3',
-                  '上传图片',
-                  '选择要转换的图像',
-                ),
-                const SizedBox(height: 20),
-                _buildSetupStep(
-                  '4',
-                  '生成模型',
-                  '等待 3D 模型生成完成',
-                ),
+                Icon(Icons.check_circle_outline, size: 18, color: colorScheme.primary),
+                const SizedBox(width: 12),
+                Text(feature, style: const TextStyle(fontSize: 14)),
               ],
             ),
-          ),
+          )),
           const Spacer(),
         ],
       ),
-    );
-  }
-
-  Widget _buildSetupStep(String number, String title, String description) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFF00A8E8),
-          ),
-          child: Center(
-            child: Text(
-              number,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF666666),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

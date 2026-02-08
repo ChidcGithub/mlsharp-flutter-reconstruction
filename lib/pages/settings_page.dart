@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import '../providers/app_settings_provider.dart';
+import '../services/inference_logger.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -43,31 +45,36 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _exportLogs() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final logFile = File('${directory.path}/mlsharp_logs.txt');
+      final logger = context.read<InferenceLogger>();
+      final logsText = logger.allLogsText;
       
-      final timestamp = DateTime.now().toString();
-      final logContent = '''
-MLSharp 3D Maker - 应用日志
-生成时间: $timestamp
-应用版本: ${_packageInfo?.version}
-构建号: ${_packageInfo?.buildNumber}
-包名: ${_packageInfo?.packageName}
-
---- 系统信息 ---
-设备: ${_packageInfo?.appName}
-
---- 日志内容 ---
-这是一个示例日志文件。
-实际的日志内容应该由应用的日志系统填充。
-''';
-
-      await logFile.writeAsString(logContent);
-      
-      if (mounted) {
+      if (logsText.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('日志已导出到: ${logFile.path}')),
+          const SnackBar(content: Text('暂无日志可导出')),
         );
+        return;
+      }
+
+      final timestamp = DateTime.now().toString().replaceAll(':', '-').split('.')[0];
+      final fileName = 'mlsharp_logs_$timestamp.txt';
+
+      // 使用 file_picker 允许用户选择保存位置
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: '选择日志保存位置',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['txt'],
+      );
+
+      if (outputFile != null) {
+        final file = File(outputFile);
+        await file.writeAsString(logsText);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('日志已成功导出至: $outputFile')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -173,14 +180,6 @@ MLSharp 3D Maker - 应用日志
                                     border: isSelected
                                         ? Border.all(color: colorScheme.onSurface, width: 3)
                                         : null,
-                                    boxShadow: [
-                                      if (isSelected)
-                                        BoxShadow(
-                                          color: color.withOpacity(0.4),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                        ),
-                                    ],
                                   ),
                                   child: isSelected
                                       ? const Icon(Icons.check, color: Colors.white)
@@ -230,14 +229,14 @@ MLSharp 3D Maker - 应用日志
                         controller: _urlController,
                         decoration: InputDecoration(
                           labelText: '后端服务器地址',
-                          hintText: 'http://127.0.0.1:8000',
+                          hintText: 'http://192.168.x.x:8000',
                           prefixIcon: const Icon(Icons.link),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.check),
                             onPressed: () {
                               settings.setBackendUrl(_urlController.text);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('✅ 连接地址已保存')),
+                                const SnackBar(content: Text('连接地址已保存')),
                               );
                             },
                           ),
@@ -296,7 +295,7 @@ MLSharp 3D Maker - 应用日志
                       ListTile(
                         leading: const Icon(Icons.download),
                         title: const Text('导出日志'),
-                        subtitle: const Text('导出应用日志文件'),
+                        subtitle: const Text('选择位置保存应用日志文件'),
                         onTap: _exportLogs,
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -320,11 +319,11 @@ MLSharp 3D Maker - 应用日志
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: colorScheme.errorContainer,
+                              color: colorScheme.surfaceContainerHighest,
                             ),
                             child: Icon(
-                              Icons.info,
-                              color: colorScheme.onErrorContainer,
+                              Icons.info_outline,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -337,36 +336,18 @@ MLSharp 3D Maker - 应用日志
                       const SizedBox(height: 16),
                       ListTile(
                         title: const Text('应用名称'),
-                        subtitle: Text(_packageInfo?.appName ?? '加载中...'),
+                        subtitle: Text(_packageInfo?.appName ?? 'MLSharp 3D Maker'),
                         contentPadding: EdgeInsets.zero,
                       ),
                       ListTile(
                         title: const Text('版本号'),
-                        subtitle: Text(_packageInfo?.version ?? '加载中...'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      ListTile(
-                        title: const Text('构建号'),
-                        subtitle: Text(_packageInfo?.buildNumber ?? '加载中...'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const Divider(),
-                      ListTile(
-                        title: const Text('包名'),
-                        subtitle: Text(_packageInfo?.packageName ?? '加载中...'),
-                        isThreeLine: true,
+                        subtitle: Text(_packageInfo?.version ?? '0.0.1'),
                         contentPadding: EdgeInsets.zero,
                       ),
                       const Divider(),
                       const ListTile(
                         title: Text('制作人'),
                         subtitle: Text('Chidc, Manus AI'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const ListTile(
-                        title: Text('项目描述'),
-                        subtitle: Text('MLSharp 3D Maker - 基于 Flutter 的 3D 高斯泼溅生成工具，针对 Snapdragon GPU 优化'),
-                        isThreeLine: true,
                         contentPadding: EdgeInsets.zero,
                       ),
                     ],

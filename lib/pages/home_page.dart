@@ -5,6 +5,7 @@ import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
+import '../services/inference_logger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,10 +26,16 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _apiService = BackendApiService();
-    _checkConnection();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final logger = context.read<InferenceLogger>();
+      _apiService.setLogger(logger);
+      _checkConnection();
+    });
   }
 
   Future<void> _checkConnection() async {
+    final backendUrl = context.read<AppSettingsProvider>().backendUrl;
+    _apiService.setBaseUrl(backendUrl);
     final connected = await _apiService.checkConnection();
     setState(() {
       _isConnected = connected;
@@ -42,19 +49,17 @@ class _HomePageState extends State<HomePage> {
         _image = File(image.path);
         _modelUrl = null;
       });
+      context.read<InferenceLogger>().info('已选择输入图像: ${image.name}');
     }
   }
 
   Future<void> _uploadImageAndGenerateModel() async {
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请先选择一张图片！')),
+        const SnackBar(content: Text('请先选择一张图片')),
       );
       return;
     }
-
-    final backendUrl = context.read<AppSettingsProvider>().backendUrl;
-    _apiService.setBaseUrl(backendUrl);
 
     setState(() {
       _isGenerating = true;
@@ -68,16 +73,16 @@ class _HomePageState extends State<HomePage> {
           _modelUrl = result['model_url'] as String?;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ 3D 模型生成成功！')),
+          const SnackBar(content: Text('3D 模型生成成功')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ 推理失败，请查看日志了解详情')),
+          const SnackBar(content: Text('推理失败，请查看终端日志')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 发生错误: $e')),
+        SnackBar(content: Text('发生错误: $e')),
       );
     } finally {
       setState(() {
@@ -88,6 +93,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('MLSharp 3D Maker'),
@@ -102,14 +109,12 @@ class _HomePageState extends State<HomePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _isConnected
-                      ? [const Color(0xFF00A8E8).withOpacity(0.1), const Color(0xFF00D4FF).withOpacity(0.1)]
-                      : [const Color(0xFFE63946).withOpacity(0.1), const Color(0xFFFF6B6B).withOpacity(0.1)],
-                ),
+                color: _isConnected 
+                    ? colorScheme.primaryContainer.withOpacity(0.2)
+                    : colorScheme.errorContainer.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                  color: _isConnected ? colorScheme.primary : colorScheme.error,
                   width: 1.5,
                 ),
               ),
@@ -117,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(
                     _isConnected ? Icons.check_circle : Icons.error,
-                    color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                    color: _isConnected ? colorScheme.primary : colorScheme.error,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -126,19 +131,19 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _isConnected ? '✅ 后端已连接' : '❌ 后端未连接',
+                          _isConnected ? '后端已连接' : '后端未连接',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                            color: _isConnected ? colorScheme.primary : colorScheme.error,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          context.read<AppSettingsProvider>().backendUrl,
+                          context.watch<AppSettingsProvider>().backendUrl,
                           style: TextStyle(
                             fontSize: 12,
-                            color: _isConnected ? const Color(0xFF00A8E8).withOpacity(0.7) : const Color(0xFFE63946).withOpacity(0.7),
+                            color: (_isConnected ? colorScheme.primary : colorScheme.error).withOpacity(0.7),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -149,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(Icons.refresh),
                     onPressed: _checkConnection,
                     tooltip: '重新检查连接',
-                    color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                    color: _isConnected ? colorScheme.primary : colorScheme.error,
                   ),
                 ],
               ),
@@ -162,11 +167,11 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 height: 300,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: colorScheme.surfaceContainerLow,
                 ),
                 child: _modelUrl != null
                     ? ModelViewer(
-                        backgroundColor: const Color.fromARGB(0xFF, 0xEE, 0xEE, 0xEE),
+                        backgroundColor: colorScheme.surfaceContainerLow,
                         src: _modelUrl!,
                         alt: "生成的 3D 模型",
                         ar: true,
@@ -182,14 +187,14 @@ class _HomePageState extends State<HomePage> {
                                 Icon(
                                   Icons.image_outlined,
                                   size: 64,
-                                  color: Colors.grey.shade400,
+                                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
                                   '请上传图片以开始生成',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey.shade600,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -209,7 +214,7 @@ class _HomePageState extends State<HomePage> {
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
                       Text(
-                        '正在生成 3D 模型，请稍候...',
+                        '正在生成 3D 模型，请稍候',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -224,18 +229,12 @@ class _HomePageState extends State<HomePage> {
                     onPressed: _pickImage,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('选择本地图片'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: _image != null && _isConnected ? _uploadImageAndGenerateModel : null,
                     icon: const Icon(Icons.auto_awesome),
                     label: const Text('开始生成 3D 模型'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ],
               ),
@@ -243,16 +242,16 @@ class _HomePageState extends State<HomePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: colorScheme.secondaryContainer.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: colorScheme.secondaryContainer),
               ),
               child: Text(
-                '💡 提示：生成的模型将以 GLB 格式展示，支持手势旋转与缩放。',
+                '提示：生成的模型将以 GLB 格式展示，支持手势旋转与缩放',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.blue.shade700,
+                  color: colorScheme.onSecondaryContainer,
                 ),
               ),
             ),

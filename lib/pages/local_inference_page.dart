@@ -25,11 +25,10 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
   @override
   void initState() {
     super.initState();
-    _addLog('本地推理引擎已初始化');
-  }
-
-  void _addLog(String message) {
-    context.read<InferenceLogger>().addLog(message);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inferenceService.setLogger(context.read<InferenceLogger>());
+      context.read<InferenceLogger>().info('本地推理页面已就绪');
+    });
   }
 
   Future<void> _pickImage() async {
@@ -39,10 +38,10 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
         setState(() {
           _selectedImage = File(image.path);
         });
-        _addLog('已选择图片: ${image.name}');
+        context.read<InferenceLogger>().info('已选择本地推理图像: ${image.name}');
       }
     } catch (e) {
-      _addLog('选择图片失败: $e');
+      context.read<InferenceLogger>().error('选择图片失败', error: e);
     }
   }
 
@@ -60,23 +59,14 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
           setState(() {
             _selectedModel = modelFile;
           });
-          _addLog('已选择模型: ${result.files.first.name}');
-          
-          if (fileName.endsWith('.onnx')) {
-            _addLog('🔍 检测到 ONNX 模型...');
-            _addLog('💡 重要提示：大型模型需要配套的 .onnx.data 权重文件');
-            _addLog('📌 文件结构: .onnx 包含模型结构，.onnx.data 包含权重');
-            _addLog('⚠️  两个文件必须在同一目录，且文件完整');
-          }
-          
+          context.read<InferenceLogger>().info('已选择模型文件: ${result.files.first.name}');
           await _loadModel(modelFile.path);
         } else {
-          _addLog('❌ 错误：请选择有效的模型文件 (.onnx, .pb, .tflite)');
+          context.read<InferenceLogger>().warning('不支持的文件格式，请选择 .onnx, .pb 或 .tflite');
         }
       }
     } catch (e) {
-      _addLog('❌ 选择模型失败: $e');
-      _addLog('💡 提示：请选择一个有效的模型文件');
+      context.read<InferenceLogger>().error('选择模型失败', error: e);
     }
   }
 
@@ -85,34 +75,14 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
       setState(() {
         _isInferencing = true;
       });
-      _addLog('🔄 正在加载模型...');
-      _addLog('📁 模型路径: $modelPath');
-      
-      final dataPath = '$modelPath.data';
-      final dataFile = File(dataPath);
-      if (dataFile.existsSync()) {
-        _addLog('✅ 检测到配套权重文件');
-      } else {
-        _addLog('⚠️  未检测到 .data 文件，加载可能失败');
-      }
-      
       await _inferenceService.initializeModel(
         modelPath,
         useNpu: _useNpu,
       );
-      
-      _addLog('✅ 模型加载成功');
-      _addLog('🚀 NPU 加速: $_useNpu');
-      
       setState(() {
         _isInferencing = false;
       });
     } catch (e) {
-      _addLog('❌ 模型加载失败: $e');
-      _addLog('💡 故障排查:');
-      _addLog('  1. 确保 .onnx 和 .onnx.data 文件在同一目录');
-      _addLog('  2. 检查文件是否完整（通过 USB 重新传输）');
-      _addLog('  3. 查看详细错误信息');
       setState(() {
         _isInferencing = false;
       });
@@ -121,12 +91,12 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
 
   Future<void> _runInference() async {
     if (_selectedImage == null) {
-      _addLog('请先选择图片');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先选择图片')));
       return;
     }
 
     if (!_inferenceService.isModelLoaded) {
-      _addLog('请先加载模型');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先加载模型')));
       return;
     }
 
@@ -134,23 +104,19 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
       setState(() {
         _isInferencing = true;
       });
-      _addLog('开始本地推理...');
       
       final dummyInput = List<List<double>>.generate(
         1,
         (i) => List<double>.generate(224 * 224 * 3, (j) => 0.5),
       );
 
-      final results = await _inferenceService.runInference(dummyInput);
+      await _inferenceService.runInference(dummyInput);
       
-      _addLog('推理完成，输出数量: ${results.length}');
-      _addLog('推理结果已生成');
-      
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('本地推理完成')));
       setState(() {
         _isInferencing = false;
       });
     } catch (e) {
-      _addLog('推理失败: $e');
       setState(() {
         _isInferencing = false;
       });
@@ -165,6 +131,8 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('本地推理'),
@@ -189,11 +157,11 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF00A8E8).withOpacity(0.1),
+                            color: colorScheme.primaryContainer,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.model_training,
-                            color: Color(0xFF00A8E8),
+                            color: colorScheme.onPrimaryContainer,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -217,38 +185,53 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade50,
+                          color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.shade300),
+                          border: Border.all(color: Colors.green.withOpacity(0.5)),
                         ),
-                        child: Text(
-                          '✅ 已选择: ${_selectedModel!.path.split('/').last}',
-                          style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '已选择: ${_selectedModel!.path.split('/').last}',
+                                style: const TextStyle(fontSize: 12, color: Colors.green),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     else
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade50,
+                          color: colorScheme.errorContainer.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade300),
+                          border: Border.all(color: colorScheme.errorContainer),
                         ),
-                        child: Text(
-                          '❌ 未选择模型',
-                          style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+                        child: Row(
+                          children: [
+                            Icon(Icons.cancel, color: colorScheme.error, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              '未选择模型',
+                              style: TextStyle(fontSize: 12, color: colorScheme.error),
+                            ),
+                          ],
                         ),
                       ),
                     const SizedBox(height: 16),
                     SwitchListTile(
                       title: const Text('启用骁龙 NPU'),
-                      subtitle: const Text('使用 NPU 加速推理（如果硬件支持）'),
+                      subtitle: const Text('使用 NPU 加速推理'),
                       value: _useNpu,
                       onChanged: (value) {
                         setState(() {
                           _useNpu = value;
                         });
-                        _addLog('NPU 加速: $value');
+                        context.read<InferenceLogger>().info('NPU 加速已${value ? "开启" : "关闭"}');
                       },
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -272,11 +255,11 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF7B2CBF).withOpacity(0.1),
+                            color: colorScheme.secondaryContainer,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.image,
-                            color: Color(0xFF7B2CBF),
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -293,6 +276,7 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                         child: Image.file(
                           _selectedImage!,
                           height: 200,
+                          width: double.infinity,
                           fit: BoxFit.cover,
                         ),
                       )
@@ -300,19 +284,19 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                       Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: colorScheme.outlineVariant),
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey.shade50,
+                          color: colorScheme.surfaceContainerLow,
                         ),
                         child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.image_outlined, size: 48, color: Colors.grey.shade400),
+                              Icon(Icons.image_outlined, size: 48, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
                               const SizedBox(height: 8),
                               Text(
                                 '未选择图片',
-                                style: TextStyle(color: Colors.grey.shade600),
+                                style: TextStyle(color: colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -342,10 +326,7 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
-                      Text(
-                        '正在推理中...',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
+                      const Text('正在处理中'),
                     ],
                   ),
                 ),

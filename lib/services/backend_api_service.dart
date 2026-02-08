@@ -1,94 +1,81 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
+import 'inference_logger.dart';
 
 class BackendApiService {
   late Dio _dio;
-  final Logger _logger = Logger();
   String _baseUrl = 'http://127.0.0.1:8000';
   bool _isConnected = false;
+  InferenceLogger? _logger;
 
   BackendApiService() {
     _initializeDio();
   }
 
-  /// 初始化 Dio 客户端，配置网络请求
+  void setLogger(InferenceLogger logger) {
+    _logger = logger;
+  }
+
   void _initializeDio() {
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
-        connectTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 5),
         receiveTimeout: const Duration(seconds: 60),
         sendTimeout: const Duration(seconds: 60),
         contentType: 'application/json',
         validateStatus: (status) => status != null && status < 500,
       ),
     );
-
-    // 添加日志拦截器
-    _dio.interceptors.add(
-      LogInterceptor(
-        requestHeader: true,
-        requestBody: false,
-        responseHeader: true,
-        responseBody: false,
-        logPrint: (obj) => _logger.i('API: $obj'),
-      ),
-    );
   }
 
-  /// 设置后端服务器地址
   void setBaseUrl(String url) {
     _baseUrl = url;
     _dio.options.baseUrl = url;
-    _logger.i('✅ 后端地址已更新: $_baseUrl');
+    _logger?.info('后端地址已更新: $_baseUrl');
   }
 
-  /// 检查后端连接状态
   Future<bool> checkConnection() async {
     try {
-      _logger.i('🔄 检查后端连接: $_baseUrl');
+      _logger?.info('正在尝试连接后端服务: $_baseUrl');
       
+      // 增加对 /health 端点的请求
       final response = await _dio.get('/health');
       
       if (response.statusCode == 200) {
         _isConnected = true;
-        _logger.i('✅ 后端连接成功');
+        _logger?.success('后端连接成功');
+        _logger?.debug('服务器响应: ${response.data}');
         return true;
       } else {
         _isConnected = false;
-        _logger.w('⚠️  后端返回错误状态码: ${response.statusCode}');
+        _logger?.warning('后端返回非预期状态码: ${response.statusCode}');
         return false;
       }
     } on DioException catch (e) {
       _isConnected = false;
-      _logger.e('❌ 连接失败: ${e.message}');
-      _logger.e('💡 故障排查:');
-      _logger.e('  1. 确保后端服务已启动: python app.py');
-      _logger.e('  2. 检查后端地址: $_baseUrl');
-      _logger.e('  3. 确保手机和电脑在同一网络');
-      _logger.e('  4. 检查防火墙是否允许 8000 端口');
-      _logger.e('  5. 尝试在电脑浏览器访问: $_baseUrl/health');
+      _logger?.error('后端连接失败', error: e);
+      
+      _logger?.info('诊断建议:');
+      if (e.type == DioExceptionType.connectionTimeout) {
+        _logger?.info('1. 检查电脑端服务是否已启动 (python app.py)');
+        _logger?.info('2. 检查手机和电脑是否在同一 WiFi 网络');
+        _logger?.info('3. 检查电脑防火墙是否允许 8000 端口访问');
+      } else if (e.error is SocketException) {
+        _logger?.info('网络不可达，请检查 IP 地址是否正确: $_baseUrl');
+      }
       return false;
     } catch (e) {
       _isConnected = false;
-      _logger.e('❌ 未知错误: $e');
+      _logger?.error('连接过程中发生未知错误', error: e);
       return false;
     }
   }
 
-  /// 上传图像并生成 3D 模型
   Future<Map<String, dynamic>?> predictImage(File imageFile) async {
     try {
-      if (!_isConnected) {
-        _logger.w('⚠️  后端未连接，尝试重新连接...');
-        final connected = await checkConnection();
-        if (!connected) {
-          throw Exception('无法连接到后端服务');
-        }
-      }
-
-      _logger.i('🔄 上传图像: ${imageFile.path}');
+      _logger?.info('准备上传图像进行 3D 生成...');
+      _logger?.debug('图像路径: ${imageFile.path}');
       
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
@@ -97,6 +84,7 @@ class BackendApiService {
         ),
       });
 
+      _logger?.info('正在上传并等待推理结果 (可能需要 30-60 秒)...');
       final response = await _dio.post(
         '/api/predict',
         data: formData,
@@ -106,81 +94,22 @@ class BackendApiService {
       );
 
       if (response.statusCode == 200) {
-        _logger.i('✅ 推理成功');
+        _logger?.success('3D 模型生成成功');
         return response.data as Map<String, dynamic>;
       } else {
-        _logger.e('❌ 推理失败: ${response.statusCode}');
-        _logger.e('响应: ${response.data}');
+        _logger?.error('服务器推理失败，状态码: ${response.statusCode}');
+        _logger?.debug('错误详情: ${response.data}');
         return null;
       }
     } on DioException catch (e) {
-      _logger.e('❌ 请求失败: ${e.message}');
-      
-      if (e.type == DioExceptionType.connectionTimeout) {
-        _logger.e('💡 连接超时，请检查:');
-        _logger.e('  1. 后端服务是否运行');
-        _logger.e('  2. 网络连接是否正常');
-        _logger.e('  3. 防火墙设置');
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        _logger.e('💡 接收超时，推理可能耗时较长，请稍候');
-      } else if (e.type == DioExceptionType.unknown) {
-        _logger.e('💡 网络错误: ${e.error}');
-        if (e.error is SocketException) {
-          _logger.e('  检查: 后端地址是否正确，防火墙是否开放');
-        }
-      }
-      
+      _logger?.error('推理请求失败', error: e);
       return null;
     } catch (e) {
-      _logger.e('❌ 未知错误: $e');
+      _logger?.error('推理过程中发生未知错误', error: e);
       return null;
     }
   }
 
-  /// 获取系统统计信息
-  Future<Map<String, dynamic>?> getStats() async {
-    try {
-      _logger.i('🔄 获取系统统计信息...');
-      
-      final response = await _dio.get('/stats');
-      
-      if (response.statusCode == 200) {
-        _logger.i('✅ 获取统计信息成功');
-        return response.data as Map<String, dynamic>;
-      } else {
-        _logger.e('❌ 获取统计信息失败: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      _logger.e('❌ 获取统计信息失败: $e');
-      return null;
-    }
-  }
-
-  /// 获取 Prometheus 指标
-  Future<String?> getMetrics() async {
-    try {
-      _logger.i('🔄 获取 Prometheus 指标...');
-      
-      final response = await _dio.get(
-        '/metrics',
-        options: Options(responseType: ResponseType.plain),
-      );
-      
-      if (response.statusCode == 200) {
-        _logger.i('✅ 获取指标成功');
-        return response.data as String;
-      } else {
-        _logger.e('❌ 获取指标失败: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      _logger.e('❌ 获取指标失败: $e');
-      return null;
-    }
-  }
-
-  // Getters
   bool get isConnected => _isConnected;
   String get baseUrl => _baseUrl;
 }
