@@ -57,12 +57,17 @@ class BackendApiService {
       _logger?.error('后端连接失败', error: e);
       
       _logger?.info('诊断建议:');
-      if (e.type == DioExceptionType.connectionTimeout) {
-        _logger?.info('1. 检查电脑端服务是否已启动 (python app.py)');
-        _logger?.info('2. 检查手机和电脑是否在同一 WiFi 网络');
-        _logger?.info('3. 检查电脑防火墙是否允许 8000 端口访问');
-      } else if (e.error is SocketException) {
-        _logger?.info('网络不可达，请检查 IP 地址是否正确: $_baseUrl');
+      if (e.type == DioExceptionType.connectionTimeout || e.error is SocketException) {
+        _logger?.info('连接诊断建议:');
+        if (_baseUrl.contains('127.0.0.1') || _baseUrl.contains('localhost')) {
+          _logger?.warning('检测到正在使用 127.0.0.1/localhost');
+          _logger?.info('提示: 手机无法通过 127.0.0.1 访问电脑。');
+          _logger?.info('  - 如果是真机: 请使用电脑的局域网 IP (如 192.168.x.x)');
+          _logger?.info('  - 如果是模拟器: 请尝试使用 10.0.2.2');
+        }
+        _logger?.info('1. 确保电脑端服务已启动 (python app.py)');
+        _logger?.info('2. 确保手机和电脑连接在同一个 WiFi');
+        _logger?.info('3. 检查电脑防火墙是否允许 8000 端口入站访问');
       }
       return false;
     } catch (e) {

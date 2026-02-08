@@ -68,7 +68,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (outputFile != null) {
         final file = File(outputFile);
-        await file.writeAsString(logsText);
+        // 修复移动端保存错误：将字符串转换为字节流
+        final bytes = Uint8List.fromList(logsText.codeUnits);
+        await file.writeAsBytes(bytes);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
