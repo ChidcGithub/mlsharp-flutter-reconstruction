@@ -21,7 +21,7 @@ class BackendApiService {
       BaseOptions(
         baseUrl: _baseUrl,
         connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 120), // 后端推理可能较慢，增加超时时间
         sendTimeout: const Duration(seconds: 60),
         contentType: 'application/json',
         validateStatus: (status) => status != null && status < 500,
@@ -39,8 +39,8 @@ class BackendApiService {
     try {
       _logger?.info('正在尝试连接后端服务: $_baseUrl');
       
-      // 增加对 /health 端点的请求
-      final response = await _dio.get('/health');
+      // 根据后端文档，健康检查端点是 /v1/health
+      final response = await _dio.get('/v1/health');
       
       if (response.statusCode == 200) {
         _isConnected = true;
@@ -58,7 +58,6 @@ class BackendApiService {
       
       _logger?.info('诊断建议:');
       if (e.type == DioExceptionType.connectionTimeout || e.error is SocketException) {
-        _logger?.info('连接诊断建议:');
         if (_baseUrl.contains('127.0.0.1') || _baseUrl.contains('localhost')) {
           _logger?.warning('检测到正在使用 127.0.0.1/localhost');
           _logger?.info('提示: 手机无法通过 127.0.0.1 访问电脑。');
@@ -82,6 +81,7 @@ class BackendApiService {
       _logger?.info('准备上传图像进行 3D 生成...');
       _logger?.debug('图像路径: ${imageFile.path}');
       
+      // 根据后端文档，预测接口是 /v1/predict，字段名是 file
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
           imageFile.path,
@@ -91,7 +91,7 @@ class BackendApiService {
 
       _logger?.info('正在上传并等待推理结果 (可能需要 30-60 秒)...');
       final response = await _dio.post(
-        '/api/predict',
+        '/v1/predict',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -100,6 +100,7 @@ class BackendApiService {
 
       if (response.statusCode == 200) {
         _logger?.success('3D 模型生成成功');
+        // 后端返回格式: { "status": "success", "url": "...", "processing_time": ..., "task_id": "..." }
         return response.data as Map<String, dynamic>;
       } else {
         _logger?.error('服务器推理失败，状态码: ${response.statusCode}');
@@ -108,6 +109,9 @@ class BackendApiService {
       }
     } on DioException catch (e) {
       _logger?.error('推理请求失败', error: e);
+      if (e.response?.data != null) {
+        _logger?.debug('服务器错误响应: ${e.response?.data}');
+      }
       return null;
     } catch (e) {
       _logger?.error('推理过程中发生未知错误', error: e);
