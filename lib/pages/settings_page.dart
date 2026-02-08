@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../providers/app_settings_provider.dart';
 import '../services/inference_logger.dart';
+import '../services/network_diagnostics_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -17,6 +18,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late TextEditingController _urlController;
   PackageInfo? _packageInfo;
+  bool _isDiagnosing = false;
+  DiagnosticResult? _diagnosticResult;
 
   final List<Color> _seedColors = [
     const Color(0xFF00A8E8), // 科技蓝
@@ -40,6 +43,21 @@ class _SettingsPageState extends State<SettingsPage> {
     final info = await PackageInfo.fromPlatform();
     setState(() {
       _packageInfo = info;
+    });
+  }
+
+  Future<void> _runDiagnostics() async {
+    setState(() {
+      _isDiagnosing = true;
+      _diagnosticResult = null;
+    });
+
+    final baseUrl = context.read<AppSettingsProvider>().backendUrl;
+    final result = await NetworkDiagnosticsService().runFullDiagnostics(baseUrl);
+
+    setState(() {
+      _isDiagnosing = false;
+      _diagnosticResult = result;
     });
   }
 
@@ -259,6 +277,76 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('网络诊断', style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (_isDiagnosing)
+                            const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          else
+                            TextButton.icon(
+                              onPressed: _runDiagnostics,
+                              icon: const Icon(Icons.network_check, size: 18),
+                              label: const Text('一键诊断'),
+                            ),
+                        ],
+                      ),
+                      if (_diagnosticResult != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _diagnosticResult!.isConnected 
+                                ? Colors.green.withOpacity(0.1) 
+                                : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _diagnosticResult!.isConnected ? Icons.check_circle : Icons.warning,
+                                    size: 16,
+                                    color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _diagnosticResult!.message,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
+                                    ),
+                                  ),
+                                  if (_diagnosticResult!.latency != null) ...[
+                                    const Spacer(),
+                                    Text('延迟: ${_diagnosticResult!.latency}ms', style: const TextStyle(fontSize: 12)),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text('连接类型: ${_diagnosticResult!.connectionType}', style: const TextStyle(fontSize: 12)),
+                              Text('VPN 状态: ${_diagnosticResult!.isVpnActive ? "已开启" : "未开启"}', style: const TextStyle(fontSize: 12)),
+                              if (_diagnosticResult!.suggestions.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Text('建议:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                ..._diagnosticResult!.suggestions.map((s) => Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text('• $s', style: const TextStyle(fontSize: 11)),
+                                )),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

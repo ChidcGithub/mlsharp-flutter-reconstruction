@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_settings_provider.dart';
 import 'services/inference_logger.dart';
@@ -10,17 +11,26 @@ import 'pages/local_inference_page.dart';
 import 'pages/terminal_page.dart';
 import 'pages/settings_page.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settingsProvider = AppSettingsProvider();
   await settingsProvider.init();
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => settingsProvider),
-        ChangeNotifierProvider(create: (_) => InferenceLogger()),
-      ],
-      child: const MyApp(),
+
+  // 初始化 Sentry
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://example@sentry.io/example'; // 占位 DSN
+      options.tracesSampleRate = 1.0;
+      options.reportSilentFlutterErrors = true;
+    },
+    appRunner: () => runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => settingsProvider),
+          ChangeNotifierProvider(create: (_) => InferenceLogger()),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -56,6 +66,9 @@ class MyApp extends StatelessWidget {
               theme: AppTheme.lightTheme(colorScheme: lightColorScheme),
               darkTheme: AppTheme.darkTheme(colorScheme: darkColorScheme),
               themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              navigatorObservers: [
+                SentryNavigatorObserver(),
+              ],
               home: settings.onboardingCompleted 
                   ? const MyHomePage(title: 'MLSharp 3D Maker')
                   : const OnboardingPage(),

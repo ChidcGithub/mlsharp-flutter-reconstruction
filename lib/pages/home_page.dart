@@ -3,6 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
 import '../services/inference_logger.dart';
@@ -21,6 +24,12 @@ class _HomePageState extends State<HomePage> {
   bool _isConnected = false;
   final ImagePicker _picker = ImagePicker();
   late BackendApiService _apiService;
+  
+  // 编辑器参数
+  double _exposure = 1.0;
+  String _environmentImage = 'neutral';
+  final ScreenshotController _screenshotController = ScreenshotController();
+  bool _showEditor = false;
 
   @override
   void initState() {
@@ -53,6 +62,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _takeScreenshot() async {
+    final status = await Permission.photos.request();
+    if (status.isGranted || status.isLimited) {
+      final image = await _screenshotController.capture();
+      if (image != null) {
+        final result = await ImageGallery_saver.saveImage(image);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('截图已保存到相册')),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('需要相册权限才能保存截图')),
+        );
+      }
+    }
+  }
+
   Future<void> _uploadImageAndGenerateModel() async {
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,6 +97,11 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final result = await _apiService.predictImage(_image!);
+      // 重置编辑器参数
+      setState(() {
+        _exposure = 1.0;
+        _environmentImage = 'neutral';
+      });
       
       if (result != null) {
         setState(() {
@@ -162,45 +197,130 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 24),
 
             // 3D 模型预览卡片
-            Card(
-              clipBehavior: Clip.antiAlias,
-              child: Container(
-                height: 300,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerLow,
-                ),
-                child: _modelUrl != null
-                    ? ModelViewer(
-                        backgroundColor: colorScheme.surfaceContainerLow,
-                        src: _modelUrl!,
-                        alt: "生成的 3D 模型",
-                        ar: true,
-                        autoRotate: true,
-                        cameraControls: true,
-                      )
-                    : _image != null
-                        ? Image.file(_image!, fit: BoxFit.cover)
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_outlined,
-                                  size: 64,
-                                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  '请上传图片以开始生成',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
+            Stack(
+              children: [
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Container(
+                    height: 400,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerLow,
+                    ),
+                    child: _modelUrl != null
+                        ? Screenshot(
+                            controller: _screenshotController,
+                            child: ModelViewer(
+                              key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
+                              backgroundColor: colorScheme.surfaceContainerLow,
+                              src: _modelUrl!,
+                              alt: "生成的 3D 模型",
+                              ar: true,
+                              autoRotate: false,
+                              cameraControls: true,
+                              exposure: _exposure,
+                              environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
                             ),
+                          )
+                        : _image != null
+                            ? Image.file(_image!, fit: BoxFit.cover, width: double.infinity)
+                            : Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_outlined,
+                                      size: 64,
+                                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      '请上传图片以开始生成',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                  ),
+                ),
+                if (_modelUrl != null) ...[
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Column(
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: 'screenshot',
+                          onPressed: _takeScreenshot,
+                          child: const Icon(Icons.camera_alt),
+                        ),
+                        const SizedBox(height: 8),
+                        FloatingActionButton.small(
+                          heroTag: 'editor',
+                          onPressed: () => setState(() => _showEditor = !_showEditor),
+                          child: Icon(_showEditor ? Icons.close : Icons.tune),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_showEditor)
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      right: 12,
+                      child: Card(
+                        color: colorScheme.surface.withOpacity(0.9),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.light_mode, size: 16),
+                                  const SizedBox(width: 8),
+                                  const Text('曝光度', style: TextStyle(fontSize: 12)),
+                                  Expanded(
+                                    child: Slider(
+                                      value: _exposure,
+                                      min: 0.1,
+                                      max: 2.0,
+                                      onChanged: (v) => setState(() => _exposure = v),
+                                    ),
+                                  ),
+                                  Text(_exposure.toStringAsFixed(1), style: const TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                              const Divider(),
+                              Row(
+                                children: [
+                                  const Icon(Icons.landscape, size: 16),
+                                  const SizedBox(width: 8),
+                                  const Text('环境', style: TextStyle(fontSize: 12)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: SegmentedButton<String>(
+                                      segments: const [
+                                        ButtonSegment(value: 'neutral', label: Text('中性', style: TextStyle(fontSize: 10))),
+                                        ButtonSegment(value: 'legacy', label: Text('室内', style: TextStyle(fontSize: 10))),
+                                        ButtonSegment(value: 'spruit_sunrise', label: Text('室外', style: TextStyle(fontSize: 10))),
+                                      ],
+                                      selected: {_environmentImage},
+                                      onSelectionChanged: (v) => setState(() => _environmentImage = v.first),
+                                      showSelectedIcon: false,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-              ),
+                        ),
+                      ),
+                    ),
+                ],
+              ],
             ),
             const SizedBox(height: 24),
 
