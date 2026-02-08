@@ -16,6 +16,15 @@ class _SettingsPageState extends State<SettingsPage> {
   late TextEditingController _urlController;
   PackageInfo? _packageInfo;
 
+  final List<Color> _seedColors = [
+    const Color(0xFF00A8E8), // 科技蓝
+    const Color(0xFF7B2CBF), // 紫色
+    const Color(0xFFE63946), // 红色
+    const Color(0xFF2A9D8F), // 青色
+    const Color(0xFFF4A261), // 橙色
+    const Color(0xFF606C38), // 绿色
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +86,8 @@ MLSharp 3D Maker - 应用日志
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
@@ -87,7 +98,7 @@ MLSharp 3D Maker - 应用日志
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              // 主题设置卡片
+              // 外观设置卡片
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -101,11 +112,11 @@ MLSharp 3D Maker - 应用日志
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF00A8E8).withOpacity(0.1),
+                              color: colorScheme.primaryContainer,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.palette,
-                              color: Color(0xFF00A8E8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -125,6 +136,61 @@ MLSharp 3D Maker - 应用日志
                         },
                         contentPadding: EdgeInsets.zero,
                       ),
+                      const Divider(),
+                      SwitchListTile(
+                        title: const Text('动态配色'),
+                        subtitle: const Text('基于系统壁纸自动调整颜色 (Android 12+)'),
+                        value: settings.useDynamicColor,
+                        onChanged: (value) {
+                          settings.setUseDynamicColor(value);
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      if (!settings.useDynamicColor) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          '选择主题种子颜色',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 50,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _seedColors.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final color = _seedColors[index];
+                              final isSelected = settings.seedColor.value == color.value;
+                              return GestureDetector(
+                                onTap: () => settings.setSeedColor(color),
+                                child: Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                    border: isSelected
+                                        ? Border.all(color: colorScheme.onSurface, width: 3)
+                                        : null,
+                                    boxShadow: [
+                                      if (isSelected)
+                                        BoxShadow(
+                                          color: color.withOpacity(0.4),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        ),
+                                    ],
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(Icons.check, color: Colors.white)
+                                      : null,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -145,11 +211,11 @@ MLSharp 3D Maker - 应用日志
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF7B2CBF).withOpacity(0.1),
+                              color: colorScheme.secondaryContainer,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.cloud_queue,
-                              color: Color(0xFF7B2CBF),
+                              color: colorScheme.onSecondaryContainer,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -165,9 +231,6 @@ MLSharp 3D Maker - 应用日志
                         decoration: InputDecoration(
                           labelText: '后端服务器地址',
                           hintText: 'http://127.0.0.1:8000',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
                           prefixIcon: const Icon(Icons.link),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.check),
@@ -184,14 +247,14 @@ MLSharp 3D Maker - 应用日志
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: colorScheme.primaryContainer.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '当前连接: ${settings.backendUrl}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.blue.shade700,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ),
@@ -215,11 +278,11 @@ MLSharp 3D Maker - 应用日志
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF00D4FF).withOpacity(0.1),
+                              color: colorScheme.tertiaryContainer,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.storage,
-                              color: Color(0xFF00D4FF),
+                              color: colorScheme.onTertiaryContainer,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -257,11 +320,11 @@ MLSharp 3D Maker - 应用日志
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFFE63946).withOpacity(0.1),
+                              color: colorScheme.errorContainer,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.info,
-                              color: Color(0xFFE63946),
+                              color: colorScheme.onErrorContainer,
                             ),
                           ),
                           const SizedBox(width: 12),

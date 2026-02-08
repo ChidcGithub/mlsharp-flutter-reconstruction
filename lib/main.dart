@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_settings_provider.dart';
 import 'services/inference_logger.dart';
@@ -31,17 +32,39 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppSettingsProvider>(
       builder: (context, settings, _) {
-        return MaterialApp(
-          title: 'MLSharp 3D Maker',
-          theme: AppTheme.lightTheme(),
-          darkTheme: AppTheme.darkTheme(),
-          themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: settings.onboardingCompleted 
-              ? const MyHomePage(title: 'MLSharp 3D Maker')
-              : const OnboardingPage(),
-          routes: {
-            '/home': (context) => const MyHomePage(title: 'MLSharp 3D Maker'),
-            '/onboarding': (context) => const OnboardingPage(),
+        return DynamicColorBuilder(
+          builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+            ColorScheme lightColorScheme;
+            ColorScheme darkColorScheme;
+
+            if (settings.useDynamicColor && lightDynamic != null && darkDynamic != null) {
+              lightColorScheme = lightDynamic.harmonized();
+              darkColorScheme = darkDynamic.harmonized();
+            } else {
+              lightColorScheme = ColorScheme.fromSeed(
+                seedColor: settings.seedColor,
+                brightness: Brightness.light,
+              );
+              darkColorScheme = ColorScheme.fromSeed(
+                seedColor: settings.seedColor,
+                brightness: Brightness.dark,
+              );
+            }
+
+            return MaterialApp(
+              title: 'MLSharp 3D Maker',
+              theme: AppTheme.lightTheme(colorScheme: lightColorScheme),
+              darkTheme: AppTheme.darkTheme(colorScheme: darkColorScheme),
+              themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              home: settings.onboardingCompleted 
+                  ? const MyHomePage(title: 'MLSharp 3D Maker')
+                  : const OnboardingPage(),
+              routes: {
+                '/home': (context) => const MyHomePage(title: 'MLSharp 3D Maker'),
+                '/onboarding': (context) => const OnboardingPage(),
+              },
+              debugShowCheckedModeBanner: false,
+            );
           },
         );
       },
@@ -77,29 +100,35 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: _onItemTapped,
+        selectedIndex: _selectedIndex,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
             label: '主页',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.computer),
+          NavigationDestination(
+            icon: Icon(Icons.computer_outlined),
+            selectedIcon: Icon(Icons.computer),
             label: '本地推理',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.terminal),
+          NavigationDestination(
+            icon: Icon(Icons.terminal_outlined),
+            selectedIcon: Icon(Icons.terminal),
             label: '终端',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
             label: '设置',
           ),
         ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
       ),
     );
   }
