@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import '../providers/app_settings_provider.dart';
@@ -73,28 +74,23 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
 
-      final timestamp = DateTime.now().toString().replaceAll(':', '-').split('.')[0];
+      final timestamp = DateTime.now().toString().replaceAll(':', '-').split('.')[0].replaceAll(' ', '_');
       final fileName = 'mlsharp_logs_$timestamp.txt';
 
-      // 使用 file_picker 允许用户选择保存位置
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '选择日志保存位置',
-        fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: ['txt'],
+      // 方案：先写入临时文件，然后调用系统分享/保存
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsString(logsText);
+
+      final result = await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        subject: 'MLSharp 3D Maker 日志导出',
       );
 
-      if (outputFile != null) {
-        final file = File(outputFile);
-        // 修复移动端保存错误：将字符串转换为字节流
-        final bytes = Uint8List.fromList(logsText.codeUnits);
-        await file.writeAsBytes(bytes);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('日志已成功导出至: $outputFile')),
-          );
-        }
+      if (result.status == ShareResultStatus.success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('日志导出/分享成功')),
+        );
       }
     } catch (e) {
       if (mounted) {

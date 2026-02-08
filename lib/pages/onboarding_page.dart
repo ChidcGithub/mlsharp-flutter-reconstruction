@@ -58,7 +58,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   '支持 NVIDIA/AMD/Intel GPU',
                   '自动 GPU 显存管理',
                   '推理结果实时预览',
+                  '需搭配 MLSharp-3D-Maker-GPU 使用',
                 ],
+                footer: '建议前往 GitHub 下载后端项目：\nhttps://github.com/ChidcGithub/MLSharp-3D-Maker-GPU',
               ),
               _buildFeaturePage(
                 colorScheme: colorScheme,
@@ -232,6 +234,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     required String title,
     required String description,
     required List<String> features,
+    String? footer,
   }) {
     return Padding(
       padding: const EdgeInsets.all(32.0),
@@ -290,6 +293,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ],
             ),
           )),
+          if (footer != null) ...[
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Text(
+                footer,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
         ],
       ),
