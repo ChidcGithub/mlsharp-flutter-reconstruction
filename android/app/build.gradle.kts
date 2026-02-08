@@ -21,12 +21,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.mlsharp.flutter.mlsharp_flutter"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 24 // 显式设置 minSdk 以确保兼容性
+        targetSdk = 36 // 强制 targetSdk 也为 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
