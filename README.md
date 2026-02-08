@@ -31,7 +31,7 @@
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)](https://www.android.com)
 [![Qualcomm Snapdragon](https://img.shields.io/badge/Supports-Qualcomm_Snapdragon_SDK-ED1C24?logo=qualcomm&logoColor=white)](https://developer.qualcomm.com/)
 [![stars](https://img.shields.io/github/stars/chidcGithub/mlsharp-flutter-reconstruction)](https://github.com/chidcGithub/mlsharp-flutter-reconstruction)
-[![GitHub Release (including pre-releases)](https://img.shields.io/github/v/release/chidcGithub/mlsharp-flutter-reconstruction?include_prereleases&label=latest)](https://github.com/ChidcGithub/mlsharp-flutter-reconstruction/releases)
+[![GitHub Release (including pre-releases)](https://img.shields.io/github/v/release/chidcGithub/mlsharp-flutter-reconstruction/releases?include_prereleases&label=latest)](https://github.com/ChidcGithub/mlsharp-flutter-reconstruction/releases)
 
 ## 项目简介
 
