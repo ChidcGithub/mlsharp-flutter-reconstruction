@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_settings_provider.dart';
 import 'services/inference_logger.dart';
+import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/local_inference_page.dart';
 import 'pages/terminal_page.dart';
@@ -35,7 +36,13 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme(),
           darkTheme: AppTheme.darkTheme(),
           themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: const MyHomePage(title: 'MLSharp 3D Maker'),
+          home: settings.onboardingCompleted 
+              ? const MyHomePage(title: 'MLSharp 3D Maker')
+              : const OnboardingPage(),
+          routes: {
+            '/home': (context) => const MyHomePage(title: 'MLSharp 3D Maker'),
+            '/onboarding': (context) => const OnboardingPage(),
+          },
         );
       },
     );

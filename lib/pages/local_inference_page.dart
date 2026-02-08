@@ -88,7 +88,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
       _addLog('🔄 正在加载模型...');
       _addLog('📁 模型路径: $modelPath');
       
-      // 检查配套文件
       final dataPath = '$modelPath.data';
       final dataFile = File(dataPath);
       if (dataFile.existsSync()) {
@@ -169,21 +168,40 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('本地推理'),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 模型配置卡片
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '模型配置',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF00A8E8).withOpacity(0.1),
+                          ),
+                          child: const Icon(
+                            Icons.model_training,
+                            color: Color(0xFF00A8E8),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          '模型配置',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -196,14 +214,30 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                     ),
                     const SizedBox(height: 12),
                     if (_selectedModel != null)
-                      Text(
-                        '已选择: ${_selectedModel!.path.split('/').last}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Text(
+                          '✅ 已选择: ${_selectedModel!.path.split('/').last}',
+                          style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                        ),
                       )
                     else
-                      const Text(
-                        '未选择模型',
-                        style: TextStyle(fontSize: 12, color: Colors.red),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade300),
+                        ),
+                        child: Text(
+                          '❌ 未选择模型',
+                          style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+                        ),
                       ),
                     const SizedBox(height: 16),
                     SwitchListTile(
@@ -216,6 +250,7 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                         });
                         _addLog('NPU 加速: $value');
                       },
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ],
                 ),
@@ -223,20 +258,38 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
             ),
             const SizedBox(height: 16),
 
+            // 图片选择卡片
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '输入图片',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF7B2CBF).withOpacity(0.1),
+                          ),
+                          child: const Icon(
+                            Icons.image,
+                            color: Color(0xFF7B2CBF),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          '输入图片',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     if (_selectedImage != null)
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                         child: Image.file(
                           _selectedImage!,
                           height: 200,
@@ -247,16 +300,20 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                       Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey.shade50,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.image_outlined, size: 48, color: Colors.grey),
-                              SizedBox(height: 8),
-                              Text('未选择图片'),
+                              Icon(Icons.image_outlined, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              Text(
+                                '未选择图片',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
                             ],
                           ),
                         ),
@@ -276,14 +333,21 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
             ),
             const SizedBox(height: 16),
 
+            // 推理按钮
             if (_isInferencing)
-              const Center(
-                child: Column(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('正在推理中...'),
-                  ],
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        '正在推理中...',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
@@ -293,8 +357,6 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                 label: const Text('开始推理'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
           ],

@@ -91,28 +91,34 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MLSharp 3D Maker'),
+        elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 连接状态指示器
+            // 连接状态卡片
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: _isConnected ? Colors.green.shade100 : Colors.red.shade100,
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: _isConnected
+                      ? [const Color(0xFF00A8E8).withOpacity(0.1), const Color(0xFF00D4FF).withOpacity(0.1)]
+                      : [const Color(0xFFE63946).withOpacity(0.1), const Color(0xFFFF6B6B).withOpacity(0.1)],
+                ),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _isConnected ? Colors.green : Colors.red,
+                  color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                  width: 1.5,
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     _isConnected ? Icons.check_circle : Icons.error_circle,
-                    color: _isConnected ? Colors.green : Colors.red,
-                    size: 20,
+                    color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
+                    size: 24,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -122,16 +128,19 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           _isConnected ? '✅ 后端已连接' : '❌ 后端未连接',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: _isConnected ? Colors.green.shade700 : Colors.red.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           context.read<AppSettingsProvider>().backendUrl,
                           style: TextStyle(
                             fontSize: 12,
-                            color: _isConnected ? Colors.green.shade600 : Colors.red.shade600,
+                            color: _isConnected ? const Color(0xFF00A8E8).withOpacity(0.7) : const Color(0xFFE63946).withOpacity(0.7),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -140,15 +149,21 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(Icons.refresh),
                     onPressed: _checkConnection,
                     tooltip: '重新检查连接',
+                    color: _isConnected ? const Color(0xFF00A8E8) : const Color(0xFFE63946),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              flex: 3,
-              child: Card(
-                clipBehavior: Clip.antiAlias,
+            const SizedBox(height: 24),
+
+            // 3D 模型预览卡片
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                ),
                 child: _modelUrl != null
                     ? ModelViewer(
                         backgroundColor: const Color.fromARGB(0xFF, 0xEE, 0xEE, 0xEE),
@@ -159,59 +174,87 @@ class _HomePageState extends State<HomePage> {
                         cameraControls: true,
                       )
                     : _image != null
-                        ? Image.file(_image!, fit: BoxFit.contain)
-                        : const Center(
+                        ? Image.file(_image!, fit: BoxFit.cover)
+                        : Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.image_outlined, size: 64, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text('请上传图片以开始生成'),
+                                Icon(
+                                  Icons.image_outlined,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '请上传图片以开始生成',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+
+            // 操作按钮区域
             if (_isGenerating)
-              const Center(
-                child: Column(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('正在生成 3D 模型，请稍候...'),
-                  ],
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        '正在生成 3D 模型，请稍候...',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
               Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ElevatedButton.icon(
                     onPressed: _pickImage,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('选择本地图片'),
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
-                    onPressed: _image != null ? _uploadImageAndGenerateModel : null,
+                    onPressed: _image != null && _isConnected ? _uploadImageAndGenerateModel : null,
                     icon: const Icon(Icons.auto_awesome),
                     label: const Text('开始生成 3D 模型'),
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ],
               ),
-            const SizedBox(height: 10),
-            const Text(
-              '提示：生成的模型将以 GLB 格式展示，支持手势旋转与缩放。',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                '💡 提示：生成的模型将以 GLB 格式展示，支持手势旋转与缩放。',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue.shade700,
+                ),
+              ),
             ),
           ],
         ),
