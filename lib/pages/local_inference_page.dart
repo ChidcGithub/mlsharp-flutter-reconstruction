@@ -48,32 +48,34 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
 
   Future<void> _pickModel() async {
     try {
+      // 修复：改用 FileType.any 以获得最佳兼容性
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        // 修复：去掉扩展名前面的点，只写 'onnx'、'pb' 等
-        allowedExtensions: ['onnx', 'pb', 'tflite', 'data'],
+        type: FileType.any,
         dialogTitle: '选择 ONNX 模型',
       );
 
       if (result != null && result.files.isNotEmpty) {
-        final modelFile = File(result.files.first.path!);
-        setState(() {
-          _selectedModel = modelFile;
-        });
-        _addLog('已选择模型: ${result.files.first.name}');
-        
-        // 优化提示：关于 .onnx.data 文件
-        if (result.files.first.name.endsWith('.onnx')) {
-          _addLog('💡 提示：如果模型文件很大，请确保对应的 .onnx.data 文件也在同一目录下');
-          _addLog('📌 .onnx 文件包含模型结构，.onnx.data 文件包含权重参数，两者必须配套使用');
+        final fileName = result.files.first.name.toLowerCase();
+        if (fileName.endsWith('.onnx') || fileName.endsWith('.pb') || fileName.endsWith('.tflite')) {
+          final modelFile = File(result.files.first.path!);
+          setState(() {
+            _selectedModel = modelFile;
+          });
+          _addLog('已选择模型: ${result.files.first.name}');
+          
+          if (fileName.endsWith('.onnx')) {
+            _addLog('💡 提示：如果模型文件很大，请确保对应的 .onnx.data 文件也在同一目录下');
+            _addLog('📌 .onnx 文件包含模型结构，.onnx.data 文件包含权重参数，两者必须配套使用');
+          }
+          
+          await _loadModel(modelFile.path);
+        } else {
+          _addLog('❌ 错误：请选择有效的模型文件 (.onnx, .pb, .tflite)');
         }
-        
-        // 尝试加载模型
-        await _loadModel(modelFile.path);
       }
     } catch (e) {
       _addLog('❌ 选择模型失败: $e');
-      _addLog('💡 提示：请确保只选择 .onnx 文件（不要选择 .onnx.data 文件）');
+      _addLog('💡 提示：请选择一个有效的模型文件');
     }
   }
 
