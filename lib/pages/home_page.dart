@@ -251,6 +251,9 @@ class _HomePageState extends State<HomePage> {
                               exposure: _exposure,
                               environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
                               loading: Loading.lazy,
+                              innerModelViewerHtml: _modelUrl!.toLowerCase().endsWith('.ply') 
+                                  ? '<script type="module">const mv = document.querySelector("model-viewer"); if (mv) { mv.src = "${_modelUrl!}"; }</script>' 
+                                  : null,
                             ),
                           )
                         : _image != null
