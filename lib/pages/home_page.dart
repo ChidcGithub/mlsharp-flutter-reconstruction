@@ -95,7 +95,17 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _downloadPly(String url) async {
     try {
-      final response = await http.get(Uri.parse(url));
+      String fullUrl = url;
+      if (!url.startsWith('http')) {
+        final backendUrl = context.read<AppSettingsProvider>().backendUrl;
+        // 确保 backendUrl 不以 / 结尾，url 以 / 开头
+        final base = backendUrl.endsWith('/') ? backendUrl.substring(0, backendUrl.length - 1) : backendUrl;
+        final path = url.startsWith('/') ? url : '/$url';
+        fullUrl = '$base$path';
+      }
+      
+      context.read<InferenceLogger>().debug('正在从完整 URL 下载 PLY: $fullUrl');
+      final response = await http.get(Uri.parse(fullUrl));
       if (response.statusCode == 200) {
         final directory = await getTemporaryDirectory();
         final file = File('${directory.path}/temp_model.ply');
@@ -272,7 +282,9 @@ class _HomePageState extends State<HomePage> {
                                 : ModelViewer(
                                     key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
                                     backgroundColor: colorScheme.surfaceContainerLow,
-                                    src: _modelUrl!,
+                                    src: _modelUrl!.startsWith('http') 
+                                        ? _modelUrl! 
+                                        : '${context.read<AppSettingsProvider>().backendUrl}${_modelUrl!.startsWith('/') ? '' : '/'}$_modelUrl',
                                     alt: "生成的 3D 模型",
                                     ar: true,
                                     arModes: const ['scene-viewer', 'webxr', 'quick-look'],
