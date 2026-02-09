@@ -24,14 +24,25 @@ class ModelFormatConverter {
         throw Exception('PLY 文件不存在');
       }
 
-      _logger?.debug('文件大小: ${(plyFile.lengthSync() / 1024 / 1024).toStringAsFixed(2)} MB');
+      final fileSize = plyFile.lengthSync();
+      _logger?.debug('文件大小: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+
+      if (fileSize > 100 * 1024 * 1024) {
+        _logger?.warning('文件过大（超过100MB），转换可能失败或耗时很长');
+      }
 
       // 2. 解析 PLY 文件
+      _logger?.info('正在解析 PLY 文件...');
       final plyData = await _parsePlyFile(plyFile);
 
       _logger?.info('解析完成，共 ${plyData.vertices.length} 个顶点');
 
+      if (plyData.vertices.isEmpty) {
+        throw Exception('PLY 文件没有有效的顶点数据');
+      }
+
       // 3. 构建 GLB 格式
+      _logger?.info('正在构建 GLB 格式...');
       final glbData = _buildGlbData(plyData);
 
       _logger?.debug('GLB 数据大小: ${(glbData.lengthInBytes / 1024 / 1024).toStringAsFixed(2)} MB');
@@ -43,9 +54,11 @@ class ModelFormatConverter {
       await glbFile.writeAsBytes(glbData.buffer.asUint8List());
 
       _logger?.success('GLB 转换成功: $glbPath');
+      _logger?.debug('GLB 文件大小: ${(glbFile.lengthSync() / 1024 / 1024).toStringAsFixed(2)} MB');
       return glbPath;
     } catch (e, stack) {
       _logger?.error('PLY 到 GLB 转换失败', error: e, stackTrace: stack);
+      _logger?.info('将尝试使用原始 PLY 格式');
       return null;
     }
   }

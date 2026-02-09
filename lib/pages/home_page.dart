@@ -37,10 +37,10 @@ class _HomePageState extends State<HomePage> {
   String _environmentImage = 'neutral';
   final ScreenshotController _screenshotController = ScreenshotController();
   bool _showEditor = false;
+  bool _isConverting = false;
   
   // PLY 加载状态
   bool _isPlyLoading = false;
-  bool _isConverting = false;
   Timer? _plyLoadingTimer;
 
   @override
