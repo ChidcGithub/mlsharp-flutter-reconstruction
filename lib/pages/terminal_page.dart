@@ -36,8 +36,7 @@ class _TerminalPageState extends State<TerminalPage> {
       case LogLevel.warning: return Colors.orange.shade600;
       case LogLevel.success: return Colors.green.shade600;
       case LogLevel.debug: return colorScheme.onSurfaceVariant;
-      case LogLevel.info:
-      default: return colorScheme.onSurface;
+      case LogLevel.info: return colorScheme.onSurface;
     }
   }
 
@@ -71,7 +70,7 @@ class _TerminalPageState extends State<TerminalPage> {
         ],
       ),
       body: Container(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
         child: logs.isEmpty
             ? Center(
                 child: Column(

@@ -77,7 +77,7 @@ class OnnxInferenceService {
 
       final runOptions = OrtRunOptions();
       _logger?.info('正在运行模型计算...');
-      final outputs = await _session!.run(runOptions, {"input": input});
+      final outputs = _session!.run(runOptions, {"input": input});
 
       _logger?.success('推理任务执行完成，获取到 ${outputs.length} 个输出节点');
       return outputs;

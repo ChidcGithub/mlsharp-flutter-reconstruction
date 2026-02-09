@@ -69,7 +69,7 @@ class NetworkDiagnosticsService {
     // 3. 测试后端连通性与延迟
     final stopwatch = Stopwatch()..start();
     try {
-      final response = await _dio.get('$baseUrl/health');
+      final response = await _dio.get('$baseUrl/v1/health');
       stopwatch.stop();
       if (response.statusCode == 200) {
         isConnected = true;

@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
 import '../services/inference_logger.dart';
@@ -174,7 +173,10 @@ class _HomePageState extends State<HomePage> {
         if (url != null && url.isNotEmpty) {
           logger.success('获取到模型 URL: $url');
           if (url.toLowerCase().endsWith('.ply')) {
-            logger.warning('检测到模型格式为 PLY。提示：PLY 格式在移动端预览可能显示为空白，建议后端转换为 GLB 格式。');
+            logger.warning('检测到模型格式为 PLY');
+        logger.info('提示：PLY 格式在移动端预览可能显示为空白或加载缓慢');
+        logger.info('建议：后端应转换为 GLB/GLTF 格式以获得更好的预览体验');
+        logger.info('参考：使用 trimesh 或 pygltflib 库进行格式转换');
           }
           setState(() {
             _modelUrl = url;
@@ -630,7 +632,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
-  StackTrace? _stackTrace;
 
   @override
   void initState() {
@@ -638,7 +639,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         _error = null;
-        _stackTrace = null;
       });
     });
   }
@@ -667,15 +667,13 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _error = null;
-                    _stackTrace = null;
-                  });
-                },
-                child: const Text('重试'),
-              ),
-            ],
+                                onPressed: () {
+                                  setState(() {
+                                    _error = null;
+                                  });
+                                },
+                                child: const Text('重试'),
+                              ),            ],
           ),
         ),
       );

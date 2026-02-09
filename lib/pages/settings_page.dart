@@ -4,7 +4,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import '../providers/app_settings_provider.dart';
 import '../services/inference_logger.dart';
 import '../services/network_diagnostics_service.dart';
