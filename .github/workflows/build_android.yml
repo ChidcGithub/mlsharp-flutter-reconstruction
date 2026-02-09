@@ -31,11 +31,15 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install CMake
+      - name: Install CMake 3.31.4
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake
+          mkdir -p $ANDROID_HOME/cmake
+          curl -L https://github.com/Kitware/CMake/releases/download/v3.31.4/cmake-3.31.4-linux-x86_64.tar.gz -o cmake.tar.gz
+          tar -xzf cmake.tar.gz
+          mv cmake-3.31.4-linux-x86_64 $ANDROID_HOME/cmake/3.31.4
+          echo "$ANDROID_HOME/cmake/3.31.4/bin" >> $GITHUB_PATH
           cmake --version
+
 
           
       - name: Install dependencies
