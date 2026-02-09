@@ -113,6 +113,9 @@ class _HomePageState extends State<HomePage> {
         
         if (url != null && url.isNotEmpty) {
           logger.success('获取到模型 URL: $url');
+          if (url.toLowerCase().endsWith('.ply')) {
+            logger.warning('检测到模型格式为 PLY。提示：PLY 格式在移动端预览可能显示为空白，建议后端转换为 GLB 格式。');
+          }
           setState(() {
             _modelUrl = url;
             _exposure = 1.0;
@@ -242,10 +245,17 @@ class _HomePageState extends State<HomePage> {
                               src: _modelUrl!,
                               alt: "生成的 3D 模型",
                               ar: true,
+                              arModes: const ['scene-viewer', 'webxr', 'quick-look'],
                               autoRotate: false,
                               cameraControls: true,
                               exposure: _exposure,
                               environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
+                              loading: Loading.lazy,
+                              onProgress: (progress) {
+                                if (progress == 1.0) {
+                                  context.read<InferenceLogger>().success('模型文件下载完成');
+                                }
+                              },
                             ),
                           )
                         : _image != null
