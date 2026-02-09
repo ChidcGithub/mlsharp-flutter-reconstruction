@@ -27,12 +27,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        externalNativeBuild {
-            cmake {
-                // 显式指定 CMake 版本，解决 CI 环境中找不到 CMake 的问题
-                version = "3.31.6"
-            }
-        }
+
     }
 
     buildTypes {
