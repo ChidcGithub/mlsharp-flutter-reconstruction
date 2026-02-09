@@ -26,6 +26,13 @@ android {
         targetSdk = 36 // 强制 targetSdk 也为 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        externalNativeBuild {
+            cmake {
+                // 显式指定 CMake 路径，解决 CI 环境中找不到 CMake 的问题
+                path = file("/usr/bin/cmake")
+            }
+        }
     }
 
     buildTypes {
