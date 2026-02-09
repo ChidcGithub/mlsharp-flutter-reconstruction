@@ -29,8 +29,8 @@ android {
 
         externalNativeBuild {
             cmake {
-                // 显式指定 CMake 路径，解决 CI 环境中找不到 CMake 的问题
-                path = file("/usr/bin/cmake")
+                // 显式指定 CMake 版本，解决 CI 环境中找不到 CMake 的问题
+                version = "3.31.6"
             }
         }
     }
