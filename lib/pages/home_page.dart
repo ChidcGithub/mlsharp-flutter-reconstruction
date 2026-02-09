@@ -1,6 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:flutter_gaussian_splatter/widgets/gaussian_splatter_widget.dart';
 import 'package:path_provider/path_provider.dart';
@@ -34,6 +35,10 @@ class _HomePageState extends State<HomePage> {
   String _environmentImage = 'neutral';
   final ScreenshotController _screenshotController = ScreenshotController();
   bool _showEditor = false;
+  
+  // PLY 加载状态
+  bool _isPlyLoading = false;
+  Timer? _plyLoadingTimer;
 
   @override
   void initState() {
@@ -53,6 +58,12 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _isConnected = connected;
     });
+  }
+
+  @override
+  void dispose() {
+    _plyLoadingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -124,6 +135,11 @@ class _HomePageState extends State<HomePage> {
         });
         
         logger.success('PLY 文件准备就绪，路径: $_localPlyPath');
+        
+        // 重置加载状态，开始新的加载计时
+        setState(() {
+          _isPlyLoading = false;
+        });
       } else {
         logger.error('PLY 下载失败，状态码: ${response.statusCode}');
         logger.debug('响应内容: ${response.body}');
@@ -479,6 +495,22 @@ class _HomePageState extends State<HomePage> {
     final logger = context.read<InferenceLogger>();
     final colorScheme = Theme.of(context).colorScheme;
     
+    // 开始加载计时
+    if (!_isPlyLoading) {
+      _isPlyLoading = true;
+      _plyLoadingTimer?.cancel();
+      _plyLoadingTimer = Timer(const Duration(seconds: 30), () {
+        if (mounted && _isPlyLoading) {
+          logger.warning('PLY 模型加载超时（30秒）');
+          logger.info('提示: PLY 文件较大（约63MB），可能需要更长时间加载');
+          logger.info('建议: 可以尝试使用较小的 PLY 文件或转换为 GLB 格式');
+          setState(() {
+            _isPlyLoading = false;
+          });
+        }
+      });
+    }
+    
     return Stack(
       children: [
         // PLY 渲染器（带错误捕获）
@@ -487,6 +519,9 @@ class _HomePageState extends State<HomePage> {
             return ErrorBoundary(
               onError: (error, stackTrace) {
                 logger.error('PLY 渲染错误: $error', error: error, stackTrace: stackTrace);
+                setState(() {
+                  _isPlyLoading = false;
+                });
               },
               child: GaussianSplatterWidget(
                 assetPath: _localPlyPath!,
@@ -495,22 +530,22 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         // 加载状态指示器
-        const Positioned(
+        Positioned(
           top: 10,
           left: 10,
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 8),
-                  Text('加载 PLY 模型...', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Text('加载 PLY 模型... (${(File(_localPlyPath!).lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB)', style: const TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -534,6 +569,45 @@ class _HomePageState extends State<HomePage> {
             tooltip: '调试信息',
           ),
         ),
+        // 错误提示和重试按钮（超时后显示）
+        if (!_isPlyLoading)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.access_time, size: 48, color: colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text(
+                          'PLY 模型加载超时',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.error),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '文件较大，加载时间可能较长',
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _isPlyLoading = true;
+                            });
+                          },
+                          child: const Text('重试'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
