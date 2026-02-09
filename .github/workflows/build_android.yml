@@ -30,6 +30,13 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      - name: Install CMake
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
+          cmake --version
+
           
       - name: Install dependencies
         run: flutter pub get
