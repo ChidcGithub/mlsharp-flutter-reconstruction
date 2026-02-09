@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:flutter_gaussian_splatter/widgets/gaussian_splatter_widget.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
@@ -20,6 +23,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   File? _image;
   String? _modelUrl;
+  String? _localPlyPath;
   bool _isGenerating = false;
   bool _isConnected = false;
   final ImagePicker _picker = ImagePicker();
@@ -89,6 +93,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _downloadPly(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final directory = await getTemporaryDirectory();
+        final file = File('${directory.path}/temp_model.ply');
+        await file.writeAsBytes(response.bodyBytes);
+        setState(() {
+          _localPlyPath = file.path;
+        });
+      }
+    } catch (e) {
+      context.read<InferenceLogger>().error('下载 PLY 失败: $e');
+    }
+  }
+
   Future<void> _uploadImageAndGenerateModel() async {
     final logger = context.read<InferenceLogger>();
     if (_image == null) {
@@ -121,6 +141,10 @@ class _HomePageState extends State<HomePage> {
             _exposure = 1.0;
             _environmentImage = 'neutral';
           });
+          
+          if (url.toLowerCase().endsWith('.ply')) {
+            _downloadPly(url);
+          }
           
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -239,22 +263,25 @@ class _HomePageState extends State<HomePage> {
                     child: _modelUrl != null
                         ? Screenshot(
                             controller: _screenshotController,
-                            child: ModelViewer(
-                              key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
-                              backgroundColor: colorScheme.surfaceContainerLow,
-                              src: _modelUrl!,
-                              alt: "生成的 3D 模型",
-                              ar: true,
-                              arModes: const ['scene-viewer', 'webxr', 'quick-look'],
-                              autoRotate: false,
-                              cameraControls: true,
-                              exposure: _exposure,
-                              environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
-                              loading: Loading.lazy,
-                              innerModelViewerHtml: _modelUrl!.toLowerCase().endsWith('.ply') 
-                                  ? '<script type="module">const mv = document.querySelector("model-viewer"); if (mv) { mv.src = "${_modelUrl!}"; }</script>' 
-                                  : null,
-                            ),
+                            child: _modelUrl!.toLowerCase().endsWith('.ply')
+                                ? (_localPlyPath != null
+                                    ? GaussianSplatterWidget(
+                                        assetPath: _localPlyPath!,
+                                      )
+                                    : const Center(child: CircularProgressIndicator()))
+                                : ModelViewer(
+                                    key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
+                                    backgroundColor: colorScheme.surfaceContainerLow,
+                                    src: _modelUrl!,
+                                    alt: "生成的 3D 模型",
+                                    ar: true,
+                                    arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+                                    autoRotate: false,
+                                    cameraControls: true,
+                                    exposure: _exposure,
+                                    environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
+                                    loading: Loading.lazy,
+                                  ),
                           )
                         : _image != null
                             ? Image.file(_image!, fit: BoxFit.cover, width: double.infinity)
