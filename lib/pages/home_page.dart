@@ -94,6 +94,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _downloadPly(String url) async {
+    final logger = context.read<InferenceLogger>();
     try {
       String fullUrl = url;
       if (!url.startsWith('http')) {
@@ -104,18 +105,31 @@ class _HomePageState extends State<HomePage> {
         fullUrl = '$base$path';
       }
       
-      context.read<InferenceLogger>().debug('正在从完整 URL 下载 PLY: $fullUrl');
+      logger.debug('正在从完整 URL 下载 PLY: $fullUrl');
       final response = await http.get(Uri.parse(fullUrl));
+      
       if (response.statusCode == 200) {
+        logger.debug('PLY 下载成功，文件大小: ${response.bodyBytes.length} bytes');
+        
         final directory = await getTemporaryDirectory();
         final file = File('${directory.path}/temp_model.ply');
         await file.writeAsBytes(response.bodyBytes);
+        
+        logger.debug('PLY 文件已保存到: ${file.path}');
+        logger.debug('文件是否存在: ${file.existsSync()}');
+        logger.debug('文件大小: ${file.lengthSync()} bytes');
+        
         setState(() {
           _localPlyPath = file.path;
         });
+        
+        logger.success('PLY 文件准备就绪，路径: $_localPlyPath');
+      } else {
+        logger.error('PLY 下载失败，状态码: ${response.statusCode}');
+        logger.debug('响应内容: ${response.body}');
       }
     } catch (e) {
-      context.read<InferenceLogger>().error('下载 PLY 失败: $e');
+      logger.error('下载 PLY 失败', error: e);
     }
   }
 
@@ -275,9 +289,7 @@ class _HomePageState extends State<HomePage> {
                             controller: _screenshotController,
                             child: _modelUrl!.toLowerCase().endsWith('.ply')
                                 ? (_localPlyPath != null
-                                    ? GaussianSplatterWidget(
-                                        assetPath: _localPlyPath!,
-                                      )
+                                    ? _buildPlyViewer()
                                     : const Center(child: CircularProgressIndicator()))
                                 : ModelViewer(
                                     key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
@@ -461,5 +473,140 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  Widget _buildPlyViewer() {
+    final logger = context.read<InferenceLogger>();
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Stack(
+      children: [
+        // PLY 渲染器（带错误捕获）
+        Builder(
+          builder: (context) {
+            return ErrorBoundary(
+              onError: (error, stackTrace) {
+                logger.error('PLY 渲染错误: $error', error: error, stackTrace: stackTrace);
+              },
+              child: GaussianSplatterWidget(
+                assetPath: _localPlyPath!,
+              ),
+            );
+          },
+        ),
+        // 加载状态指示器
+        const Positioned(
+          top: 10,
+          left: 10,
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text('加载 PLY 模型...', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // 调试信息按钮
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: FloatingActionButton.small(
+            heroTag: 'debug_ply',
+            onPressed: () {
+              logger.debug('PLY 模型路径: $_localPlyPath');
+              logger.debug('文件是否存在: ${File(_localPlyPath!).existsSync()}');
+              if (File(_localPlyPath!).existsSync()) {
+                final file = File(_localPlyPath!);
+                logger.debug('文件大小: ${file.lengthSync()} bytes');
+              }
+            },
+            child: const Icon(Icons.bug_report),
+            tooltip: '调试信息',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// 自定义错误边界组件
+class ErrorBoundary extends StatefulWidget {
+  final Widget child;
+  final void Function(Object error, StackTrace stackTrace)? onError;
+
+  const ErrorBoundary({
+    super.key,
+    required this.child,
+    this.onError,
+  });
+
+  @override
+  State<ErrorBoundary> createState() => _ErrorBoundaryState();
+}
+
+class _ErrorBoundaryState extends State<ErrorBoundary> {
+  Object? _error;
+  StackTrace? _stackTrace;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _error = null;
+        _stackTrace = null;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      final colorScheme = Theme.of(context).colorScheme;
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'PLY 模型渲染失败',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.error),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '错误信息: $_error',
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _error = null;
+                    _stackTrace = null;
+                  });
+                },
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return widget.child;
   }
 }
