@@ -90,6 +90,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _uploadImageAndGenerateModel() async {
+    final logger = context.read<InferenceLogger>();
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请先选择一张图片')),
@@ -103,28 +104,48 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final result = await _apiService.predictImage(_image!);
-      // 重置编辑器参数
-      setState(() {
-        _exposure = 1.0;
-        _environmentImage = 'neutral';
-      });
       
       if (result != null) {
-        setState(() {
-          _modelUrl = result['model_url'] as String?;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('3D 模型生成成功')),
-        );
+        logger.debug('正在解析推理结果: $result');
+        
+        // 后端返回字段是 'url'，而不是 'model_url'
+        final String? url = result['url'] as String?;
+        
+        if (url != null && url.isNotEmpty) {
+          logger.success('获取到模型 URL: $url');
+          setState(() {
+            _modelUrl = url;
+            _exposure = 1.0;
+            _environmentImage = 'neutral';
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('3D 模型生成成功，正在加载预览')),
+            );
+          }
+        } else {
+          logger.error('推理结果中未找到有效的 url 字段');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('推理成功但未获取到模型地址')),
+            );
+          }
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('推理失败，请查看终端日志')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('推理失败，请查看终端日志')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('发生错误: $e')),
-      );
+      logger.error('处理推理结果时发生错误', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('发生错误: $e')),
+        );
+      }
     } finally {
       setState(() {
         _isGenerating = false;
@@ -300,25 +321,15 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                               const Divider(),
-                              Row(
-                                children: [
-                                  const Icon(Icons.landscape, size: 16),
-                                  const SizedBox(width: 8),
-                                  const Text('环境', style: TextStyle(fontSize: 12)),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: SegmentedButton<String>(
-                                      segments: const [
-                                        ButtonSegment(value: 'neutral', label: Text('中性', style: TextStyle(fontSize: 10))),
-                                        ButtonSegment(value: 'legacy', label: Text('室内', style: TextStyle(fontSize: 10))),
-                                        ButtonSegment(value: 'spruit_sunrise', label: Text('室外', style: TextStyle(fontSize: 10))),
-                                      ],
-                                      selected: {_environmentImage},
-                                      onSelectionChanged: (v) => setState(() => _environmentImage = v.first),
-                                      showSelectedIcon: false,
-                                    ),
-                                  ),
-                                ],
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _buildEnvOption('neutral', '中性', Icons.brightness_5),
+                                    _buildEnvOption('room', '室内', Icons.room),
+                                    _buildEnvOption('park', '室外', Icons.park),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -326,63 +337,81 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                 ],
+                if (_isGenerating)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black45,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 16),
+                            const Text(
+                              '正在生成 3D 模型...',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              '这可能需要一分钟左右',
+                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // 操作按钮区域
-            if (_isGenerating)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Column(
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        '正在生成 3D 模型，请稍候',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _pickImage,
+            // 操作按钮
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _isGenerating ? null : _pickImage,
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('选择本地图片'),
+                    label: const Text('选择图片'),
                   ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: _image != null && _isConnected ? _uploadImageAndGenerateModel : null,
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('开始生成 3D 模型'),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.secondaryContainer),
-              ),
-              child: Text(
-                '提示：生成的模型将以 GLB 格式展示，支持手势旋转与缩放',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSecondaryContainer,
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: (_isGenerating || !_isConnected || _image == null) 
+                        ? null 
+                        : _uploadImageAndGenerateModel,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('开始生成'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.tertiary,
+                      foregroundColor: colorScheme.onTertiary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEnvOption(String value, String label, IconData icon) {
+    final isSelected = _environmentImage == value;
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: ChoiceChip(
+        label: Text(label),
+        avatar: Icon(icon, size: 16, color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
+        selected: isSelected,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() => _environmentImage = value);
+          }
+        },
       ),
     );
   }
