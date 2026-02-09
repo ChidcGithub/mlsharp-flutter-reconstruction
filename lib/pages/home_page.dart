@@ -12,6 +12,7 @@ import 'package:gal/gal.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
 import '../services/inference_logger.dart';
+import '../services/model_format_converter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,10 +25,12 @@ class _HomePageState extends State<HomePage> {
   File? _image;
   String? _modelUrl;
   String? _localPlyPath;
+  String? _localGlbPath;
   bool _isGenerating = false;
   bool _isConnected = false;
   final ImagePicker _picker = ImagePicker();
   late BackendApiService _apiService;
+  final ModelFormatConverter _formatConverter = ModelFormatConverter();
   
   // 编辑器参数
   double _exposure = 1.0;
@@ -37,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   
   // PLY 加载状态
   bool _isPlyLoading = false;
+  bool _isConverting = false;
   Timer? _plyLoadingTimer;
 
   @override
@@ -62,6 +66,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _plyLoadingTimer?.cancel();
+    // 可选：清理临时文件
+    _localGlbPath = null;
     super.dispose();
   }
 
@@ -122,23 +128,47 @@ class _HomePageState extends State<HomePage> {
         logger.debug('PLY 下载成功，文件大小: ${response.bodyBytes.length} bytes');
         
         final directory = await getTemporaryDirectory();
-        final file = File('${directory.path}/temp_model.ply');
-        await file.writeAsBytes(response.bodyBytes);
+        final plyFile = File('${directory.path}/temp_model.ply');
+        await plyFile.writeAsBytes(response.bodyBytes);
         
-        logger.debug('PLY 文件已保存到: ${file.path}');
-        logger.debug('文件是否存在: ${file.existsSync()}');
-        logger.debug('文件大小: ${file.lengthSync()} bytes');
+        logger.debug('PLY 文件已保存到: ${plyFile.path}');
+        logger.debug('文件是否存在: ${plyFile.existsSync()}');
+        logger.debug('文件大小: ${plyFile.lengthSync()} bytes');
         
         setState(() {
-          _localPlyPath = file.path;
+          _localPlyPath = plyFile.path;
+          _isConverting = true;
         });
         
-        logger.success('PLY 文件准备就绪，路径: $_localPlyPath');
+        logger.info('开始将 PLY 转换为 GLB 格式...');
         
-        // 重置加载状态，开始新的加载计时
-        setState(() {
-          _isPlyLoading = false;
-        });
+        // 转换为 GLB 格式
+        _formatConverter.setLogger(logger);
+        final glbPath = await _formatConverter.convertPlyToGlb(plyFile.path);
+        
+        if (glbPath != null) {
+          final glbFile = File(glbPath);
+          logger.success('GLB 转换成功: ${glbFile.path}');
+          logger.debug('GLB 文件大小: ${(glbFile.lengthSync() / 1024 / 1024).toStringAsFixed(2)} MB');
+          
+          setState(() {
+            _localGlbPath = glbPath;
+            _isConverting = false;
+          });
+          
+          // 清理 PLY 文件
+          try {
+            await plyFile.delete();
+            logger.debug('已删除临时 PLY 文件');
+          } catch (e) {
+            logger.warning('删除 PLY 文件失败: $e');
+          }
+        } else {
+          logger.error('GLB 转换失败，将尝试使用 PLY 格式');
+          setState(() {
+            _isConverting = false;
+          });
+        }
       } else {
         logger.error('PLY 下载失败，状态码: ${response.statusCode}');
         logger.debug('响应内容: ${response.body}');
@@ -175,8 +205,8 @@ class _HomePageState extends State<HomePage> {
           if (url.toLowerCase().endsWith('.ply')) {
             logger.warning('检测到模型格式为 PLY');
         logger.info('提示：PLY 格式在移动端预览可能显示为空白或加载缓慢');
-        logger.info('建议：后端应转换为 GLB/GLTF 格式以获得更好的预览体验');
-        logger.info('参考：使用 trimesh 或 pygltflib 库进行格式转换');
+        logger.info('应用将自动尝试将 PLY 转换为 GLB 格式以获得更好的预览体验');
+        logger.info('转换过程可能需要几分钟，请稍候...');
           }
           setState(() {
             _modelUrl = url;
@@ -241,8 +271,8 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: _isConnected 
-                    ? colorScheme.primaryContainer.withOpacity(0.2)
-                    : colorScheme.errorContainer.withOpacity(0.2),
+                    ? colorScheme.primaryContainer.withValues(alpha: 0.2)
+                    : colorScheme.errorContainer.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isConnected ? colorScheme.primary : colorScheme.error,
@@ -274,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                           context.watch<AppSettingsProvider>().backendUrl,
                           style: TextStyle(
                             fontSize: 12,
-                            color: (_isConnected ? colorScheme.primary : colorScheme.error).withOpacity(0.7),
+                            color: (_isConnected ? colorScheme.primary : colorScheme.error).withValues(alpha: 0.7),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -305,11 +335,27 @@ class _HomePageState extends State<HomePage> {
                     child: _modelUrl != null
                         ? Screenshot(
                             controller: _screenshotController,
-                            child: _modelUrl!.toLowerCase().endsWith('.ply')
-                                ? (_localPlyPath != null
-                                    ? _buildPlyViewer()
-                                    : const Center(child: CircularProgressIndicator()))
-                                : ModelViewer(
+                            child: _isConverting
+                                ? _buildConvertingView()
+                                : _modelUrl!.toLowerCase().endsWith('.ply')
+                                    ? (_localGlbPath != null
+                                        ? ModelViewer(
+                                            key: ValueKey('$_localGlbPath-$_exposure-$_environmentImage'),
+                                            backgroundColor: colorScheme.surfaceContainerLow,
+                                            src: _localGlbPath!,
+                                            alt: "转换后的 3D 模型",
+                                            ar: true,
+                                            arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+                                            autoRotate: false,
+                                            cameraControls: true,
+                                            exposure: _exposure,
+                                            environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
+                                            loading: Loading.lazy,
+                                          )
+                                        : (_localPlyPath != null
+                                            ? _buildPlyViewer()
+                                            : const Center(child: CircularProgressIndicator())))
+                                    : ModelViewer(
                                     key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
                                     backgroundColor: colorScheme.surfaceContainerLow,
                                     src: _modelUrl!.startsWith('http') 
@@ -334,7 +380,7 @@ class _HomePageState extends State<HomePage> {
                                     Icon(
                                       Icons.image_outlined,
                                       size: 64,
-                                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
@@ -375,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                       left: 12,
                       right: 12,
                       child: Card(
-                        color: colorScheme.surface.withOpacity(0.9),
+                        color: colorScheme.surface.withValues(alpha: 0.9),
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Column(
@@ -493,7 +539,45 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPlyViewer() {
+  Widget _buildConvertingView() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            '正在转换为 GLB 格式...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '这可能需要几分钟时间',
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '请查看终端日志获取进度',
+            style: TextStyle(
+              fontSize: 10,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildPlyViewer() {
     final logger = context.read<InferenceLogger>();
     final colorScheme = Theme.of(context).colorScheme;
     
@@ -548,6 +632,39 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(width: 8),
                   Text('加载 PLY 模型... (${(File(_localPlyPath!).lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB)', style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // 格式转换失败提示
+        Positioned(
+          bottom: 60,
+          left: 10,
+          child: Card(
+            color: colorScheme.errorContainer.withValues(alpha: 0.9),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.warning, size: 16, color: colorScheme.onErrorContainer),
+                      const SizedBox(width: 4),
+                      Text(
+                        'GLB 转换失败，使用 PLY 格式',
+                        style: TextStyle(fontSize: 10, color: colorScheme.onErrorContainer, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'PLY 渲染可能较慢或显示异常',
+                    style: TextStyle(fontSize: 9, color: colorScheme.onErrorContainer),
+                  ),
                 ],
               ),
             ),
