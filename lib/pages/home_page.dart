@@ -251,11 +251,6 @@ class _HomePageState extends State<HomePage> {
                               exposure: _exposure,
                               environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
                               loading: Loading.lazy,
-                              onProgress: (progress) {
-                                if (progress == 1.0) {
-                                  context.read<InferenceLogger>().success('模型文件下载完成');
-                                }
-                              },
                             ),
                           )
                         : _image != null
