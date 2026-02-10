@@ -705,7 +705,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Text(
                           '文件路径: ${_localPlyPath ?? 'N/A'}',
-                          style: const TextStyle(fontSize: 10, color: Colors.white50),
+                          style: const TextStyle(fontSize: 10, color: Colors.white70),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
