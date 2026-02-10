@@ -263,26 +263,27 @@ class HistoryItemViewer extends StatelessWidget {
         children: [
           Expanded(
             child: historyItem.localModelPath.endsWith('.ply')
-                ? _buildPlyViewer()
-                : _buildModelViewer(colorScheme),
+                ? _buildPlyViewer(context)
+                : _buildModelViewer(context, colorScheme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPlyViewer() {
+  Widget _buildPlyViewer(BuildContext context) {
     // 使用GaussianSplatterWidget显示PLY格式的模型
+    final colorScheme = Theme.of(context).colorScheme;
     try {
       return Container(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: colorScheme.surfaceContainerLow,
         child: GaussianSplatterWidget(
           assetPath: historyItem.localModelPath,
         ),
       );
     } catch (e) {
       return Container(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: colorScheme.surfaceContainerLow,
         child: Center(
           child: Text('无法加载PLY模型: $e'),
         ),
@@ -290,7 +291,7 @@ class HistoryItemViewer extends StatelessWidget {
     }
   }
 
-  Widget _buildModelViewer(ColorScheme colorScheme) {
+  Widget _buildModelViewer(BuildContext context, ColorScheme colorScheme) {
     // 使用ModelViewer显示非PLY格式的模型
     try {
       return ModelViewer(
