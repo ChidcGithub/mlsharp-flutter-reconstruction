@@ -5,16 +5,21 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_settings_provider.dart';
 import 'services/inference_logger.dart';
+import 'services/history_service.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/local_inference_page.dart';
 import 'pages/terminal_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/history_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settingsProvider = AppSettingsProvider();
   await settingsProvider.init();
+  
+  final historyService = HistoryService();
+  await historyService.init();
 
   // 初始化 Sentry
   await SentryFlutter.init(
@@ -28,6 +33,7 @@ Future<void> main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => settingsProvider),
           ChangeNotifierProvider(create: (_) => InferenceLogger()),
+          Provider<HistoryService>.value(value: historyService),
         ],
         child: const MyApp(),
       ),
@@ -100,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Widget> _pages = [
     const HomePage(),
     const LocalInferencePage(),
+    const HistoryPage(), // 历史记录页面
     const TerminalPage(),
     const SettingsPage(),
   ];
@@ -130,6 +137,11 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.computer_outlined),
             selectedIcon: Icon(Icons.computer),
             label: '本地推理',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history),
+            selectedIcon: Icon(Icons.history),
+            label: '历史记录',
           ),
           NavigationDestination(
             icon: Icon(Icons.terminal_outlined),

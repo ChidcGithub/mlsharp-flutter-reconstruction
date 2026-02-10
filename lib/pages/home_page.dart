@@ -9,9 +9,11 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/app_settings_provider.dart';
 import '../services/backend_api_service.dart';
 import '../services/inference_logger.dart';
+import '../services/history_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -100,6 +102,52 @@ class _HomePageState extends State<HomePage> {
           SnackBar(content: Text('保存失败: $e')),
         );
       }
+    }
+  }
+
+  Future<String> _downloadModel(String url) async {
+    final logger = context.read<InferenceLogger>();
+    try {
+      String fullUrl = url;
+      if (!url.startsWith('http')) {
+        final backendUrl = context.read<AppSettingsProvider>().backendUrl;
+        // 确保 backendUrl 不以 / 结尾，url 以 / 开头
+        final base = backendUrl.endsWith('/') ? backendUrl.substring(0, backendUrl.length - 1) : backendUrl;
+        final path = url.startsWith('/') ? url : '/$url';
+        fullUrl = '$base$path';
+      }
+      
+      logger.debug('正在从完整 URL 下载模型: $fullUrl');
+      final response = await http.get(Uri.parse(fullUrl));
+      
+      if (response.statusCode == 200) {
+        logger.debug('模型下载成功，文件大小: ${response.bodyBytes.length} bytes');
+        
+        // 获取历史记录服务的路径
+        final historyService = context.read<HistoryService>();
+        final modelsPath = historyService.getModelsPath();
+        
+        // 生成唯一的文件名
+        final fileExtension = url.split('.').last.toLowerCase();
+        final fileName = 'model_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        final modelFile = File('$modelsPath/$fileName');
+        await modelFile.writeAsBytes(response.bodyBytes);
+        
+        logger.debug('模型文件已保存到: ${modelFile.path}');
+        logger.debug('文件是否存在: ${modelFile.existsSync()}');
+        logger.debug('文件大小: ${modelFile.lengthSync()} bytes');
+        
+        logger.success('模型文件准备就绪，路径: ${modelFile.path}');
+        return modelFile.path;
+      } else {
+        logger.error('模型下载失败，状态码: ${response.statusCode}');
+        logger.debug('响应内容: ${response.body}');
+        return '';
+      }
+    } catch (e) {
+      logger.error('下载模型失败', error: e);
+      logger.error('错误详情: ${e.toString()}');
+      return '';
     }
   }
 
@@ -197,15 +245,25 @@ class _HomePageState extends State<HomePage> {
           });
           
           // 检查是否为PLY格式，并需要下载到本地
+          String localModelPath = '';
           if (url.toLowerCase().endsWith('.ply')) {
             logger.warning('检测到模型格式为 PLY');
             logger.info('提示：PLY 格式在移动端预览可能显示为空白或加载缓慢');
             logger.info('建议：可以尝试使用较小的 PLY 文件或使用 GLB/GLTF 格式');
             await _downloadPly(url);
+            // 设置本地模型路径
+            if (_localPlyPath != null) {
+              localModelPath = _localPlyPath!;
+            }
           } else {
             logger.info('检测到模型格式为: ${url.split('.').last.toUpperCase()}');
             logger.info('该格式通常在移动设备上有更好的兼容性');
+            // 对于非PLY格式，我们可能需要下载到本地
+            localModelPath = await _downloadModel(url);
           }
+          
+          // 保存到历史记录
+          await _saveToHistory(url, localModelPath);
           
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -303,6 +361,28 @@ class _HomePageState extends State<HomePage> {
           environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
           loading: Loading.lazy,
         );
+    }
+  }
+
+  Future<void> _saveToHistory(String modelUrl, String localModelPath) async {
+    final logger = context.read<InferenceLogger>();
+    try {
+      final historyService = context.read<HistoryService>();
+      final imageFileName = _image!.path.split('/').last;
+      
+      final historyItem = HistoryItem(
+        id: const Uuid().v4(),
+        imageUrl: _image!.path,
+        modelUrl: modelUrl,
+        localModelPath: localModelPath,
+        timestamp: DateTime.now(),
+        imageFileName: imageFileName,
+      );
+      
+      await historyService.addToHistory(historyItem);
+      logger.info('模型已保存到历史记录: $imageFileName');
+    } catch (e) {
+      logger.error('保存模型到历史记录失败', error: e);
     }
   }
 

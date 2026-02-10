@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:convert';
 import '../providers/app_settings_provider.dart';
 import '../services/inference_logger.dart';
 import '../services/network_diagnostics_service.dart';
@@ -439,11 +441,273 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // 应用信息卡片
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colorScheme.surfaceContainerHighest,
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            '应用信息',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      FutureBuilder<PackageInfo>(
+                        future: _getPackageInfo(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final packageInfo = snapshot.data!;
+                            return Column(
+                              children: [
+                                ListTile(
+                                  title: const Text('版本号'),
+                                  subtitle: Text(packageInfo.version),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                ListTile(
+                                  title: const Text('构建号'),
+                                  subtitle: Text(packageInfo.buildNumber),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                ListTile(
+                                  title: const Text('构建日期'),
+                                  subtitle: Text(_getBuildDate()),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ],
+                            );
+                          } else {
+                            return const ListTile(
+                              title: Text('加载中...'),
+                              contentPadding: EdgeInsets.zero,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 更新检查卡片
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colorScheme.primaryContainer,
+                            ),
+                            child: Icon(
+                              Icons.update,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            '更新检查',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ListTile(
+                        title: const Text('检查更新'),
+                        subtitle: const Text('检查是否有新版本可用'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        contentPadding: EdgeInsets.zero,
+                        onTap: _checkForUpdates,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 32),
             ],
           );
         },
       ),
+    );
+  }
+
+  Future<PackageInfo> _getPackageInfo() async {
+    return await PackageInfo.fromPlatform();
+  }
+
+  String _getBuildDate() {
+    // 在实际应用中，这可以从构建时注入的环境变量或资源文件中获取
+    // 临时返回当前日期
+    return DateTime.now().toString().split(' ')[0];
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final logger = context.read<InferenceLogger>();
+      logger.info('开始检查更新...');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('正在检查更新...')),
+        );
+      }
+
+      // 从GitHub获取最新版本信息
+      final response = await http.get(
+        Uri.parse('https://api.github.com/repos/ChidcGithub/mlsharp-flutter-reconstruction/releases/latest'),
+      );
+
+      if (response.statusCode == 200) {
+        final releaseData = json.decode(response.body);
+        final latestVersion = releaseData['tag_name'] ?? releaseData['name'];
+        final currentPackageInfo = await PackageInfo.fromPlatform();
+        final currentVersion = currentPackageInfo.version;
+
+        logger.info('当前版本: $currentVersion');
+        logger.info('最新版本: $latestVersion');
+
+        if (_isNewerVersion(latestVersion, currentVersion)) {
+          if (mounted) {
+            _showUpdateDialog(latestVersion, releaseData);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('当前已是最新版本 ($currentVersion)')),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('检查更新失败，请稍后再试')),
+          );
+        }
+      }
+    } catch (e) {
+      final logger = context.read<InferenceLogger>();
+      logger.error('检查更新时发生错误', error: e);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('检查更新时发生错误')),
+        );
+      }
+    }
+  }
+
+  bool _isNewerVersion(String latest, String current) {
+    // 简单的版本比较，实际应用中可能需要更复杂的逻辑
+    try {
+      // 移除版本号前的"v"字符（如果存在）
+      final latestClean = latest.toLowerCase().replaceAll('v', '');
+      final currentClean = current.toLowerCase().replaceAll('v', '');
+      
+      // 比较版本号
+      final latestParts = latestClean.split('.');
+      final currentParts = currentClean.split('.');
+      
+      for (int i = 0; i < latestParts.length && i < currentParts.length; i++) {
+        final latestNum = int.tryParse(latestParts[i].split('-').first) ?? 0;
+        final currentNum = int.tryParse(currentParts[i].split('-').first) ?? 0;
+        
+        if (latestNum > currentNum) {
+          return true;
+        } else if (latestNum < currentNum) {
+          return false;
+        }
+      }
+      
+      return latestParts.length > currentParts.length;
+    } catch (e) {
+      // 如果解析失败，返回false（假定当前版本是最新的）
+      return false;
+    }
+  }
+
+  void _showUpdateDialog(String latestVersion, Map<String, dynamic> releaseData) {
+    final String updateUrl = releaseData['html_url'] ?? '';
+    final String releaseNotes = releaseData['body'] ?? '无更新说明';
+    final String publishedAt = releaseData['published_at'] ?? '';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('发现新版本'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('最新版本: $latestVersion'),
+              const SizedBox(height: 8),
+              const Text('更新说明:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Flexible(
+                child: Text(
+                  releaseNotes.length > 300 
+                      ? '${releaseNotes.substring(0, 300)}...' 
+                      : releaseNotes,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              if (publishedAt.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text('发布时间: ${DateTime.parse(publishedAt).toString().split('.')[0]}'),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('稍后'),
+          ),
+          TextButton(
+            onPressed: () {
+              // 打开更新页面
+              Navigator.of(context).pop();
+              _openUpdatePage(updateUrl);
+            },
+            child: const Text('立即更新'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openUpdatePage(String url) {
+    // 在实际应用中，这里可以使用url_launcher包打开URL
+    // 由于我们没有导入url_launcher，暂时显示一个提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('请访问: $url 下载最新版本')),
     );
   }
 }
