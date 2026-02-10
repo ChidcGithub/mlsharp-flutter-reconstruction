@@ -134,12 +134,34 @@ class _HomePageState extends State<HomePage> {
         });
         
         logger.success('PLY 文件准备就绪，路径: $_localPlyPath');
+        
+        // 确保模型视图更新
+        setState(() {
+          _isPlyLoading = false;
+        });
       } else {
         logger.error('PLY 下载失败，状态码: ${response.statusCode}');
         logger.debug('响应内容: ${response.body}');
+        
+        // 尝试检查是否是302重定向
+        if (response.statusCode == 302 || response.statusCode == 301) {
+          final redirectUrl = response.headers['location'];
+          if (redirectUrl != null) {
+            logger.info('检测到重定向，尝试新URL: $redirectUrl');
+            await _downloadPly(redirectUrl);
+          }
+        }
       }
     } catch (e) {
       logger.error('下载 PLY 失败', error: e);
+      logger.error('错误详情: ${e.toString()}');
+      
+      // 更新状态以便用户知道下载失败
+      if (mounted) {
+        setState(() {
+          _isPlyLoading = false;
+        });
+      }
     }
   }
 
@@ -167,19 +189,22 @@ class _HomePageState extends State<HomePage> {
         
         if (url != null && url.isNotEmpty) {
           logger.success('获取到模型 URL: $url');
-          if (url.toLowerCase().endsWith('.ply')) {
-            logger.warning('检测到模型格式为 PLY');
-        logger.info('提示：PLY 格式在移动端预览可能显示为空白或加载缓慢');
-        logger.info('建议：可以尝试使用较小的 PLY 文件或使用 GLB/GLTF 格式');
-          }
+          
           setState(() {
             _modelUrl = url;
             _exposure = 1.0;
             _environmentImage = 'neutral';
           });
           
+          // 检查是否为PLY格式，并需要下载到本地
           if (url.toLowerCase().endsWith('.ply')) {
-            _downloadPly(url);
+            logger.warning('检测到模型格式为 PLY');
+            logger.info('提示：PLY 格式在移动端预览可能显示为空白或加载缓慢');
+            logger.info('建议：可以尝试使用较小的 PLY 文件或使用 GLB/GLTF 格式');
+            await _downloadPly(url);
+          } else {
+            logger.info('检测到模型格式为: ${url.split('.').last.toUpperCase()}');
+            logger.info('该格式通常在移动设备上有更好的兼容性');
           }
           
           if (mounted) {
@@ -213,6 +238,71 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isGenerating = false;
       });
+    }
+  }
+
+  // 根据模型URL决定使用哪种3D查看器
+  Widget _getModelViewer(ColorScheme colorScheme) {
+    final String modelFormat = _modelUrl!.split('.').last.toLowerCase();
+    
+    switch (modelFormat) {
+      case 'ply':
+        // PLY格式需要先下载到本地再使用GaussianSplatterWidget渲染
+        if (_localPlyPath != null) {
+          return _buildPlyViewer();
+        } else {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('正在下载 PLY 模型...'),
+              ],
+            ),
+          );
+        }
+      case 'glb':
+      case 'gltf':
+      case 'obj':
+      case 'fbx':
+        // 使用ModelViewer渲染标准3D格式
+        final fullUrl = _modelUrl!.startsWith('http') 
+            ? _modelUrl! 
+            : '${context.read<AppSettingsProvider>().backendUrl}${_modelUrl!.startsWith('/') ? '' : '/'}$_modelUrl';
+            
+        return ModelViewer(
+          key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
+          backgroundColor: colorScheme.surfaceContainerLow,
+          src: fullUrl,
+          alt: "生成的 3D 模型",
+          ar: true,
+          arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+          autoRotate: false,
+          cameraControls: true,
+          exposure: _exposure,
+          environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
+          loading: Loading.lazy,
+        );
+      default:
+        // 对于未知格式，尝试使用ModelViewer，如果失败则显示错误信息
+        final fullUrl = _modelUrl!.startsWith('http') 
+            ? _modelUrl! 
+            : '${context.read<AppSettingsProvider>().backendUrl}${_modelUrl!.startsWith('/') ? '' : '/'}$_modelUrl';
+            
+        return ModelViewer(
+          key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
+          backgroundColor: colorScheme.surfaceContainerLow,
+          src: fullUrl,
+          alt: "生成的 3D 模型 (格式: $modelFormat)",
+          ar: true,
+          arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+          autoRotate: false,
+          cameraControls: true,
+          exposure: _exposure,
+          environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
+          loading: Loading.lazy,
+        );
     }
   }
 
@@ -299,25 +389,7 @@ class _HomePageState extends State<HomePage> {
                     child: _modelUrl != null
                         ? Screenshot(
                             controller: _screenshotController,
-                            child: _modelUrl!.toLowerCase().endsWith('.ply')
-                                ? (_localPlyPath != null
-                                    ? _buildPlyViewer()
-                                    : const Center(child: CircularProgressIndicator()))
-                                : ModelViewer(
-                                    key: ValueKey('$_modelUrl-$_exposure-$_environmentImage'),
-                                    backgroundColor: colorScheme.surfaceContainerLow,
-                                    src: _modelUrl!.startsWith('http') 
-                                        ? _modelUrl! 
-                                        : '${context.read<AppSettingsProvider>().backendUrl}${_modelUrl!.startsWith('/') ? '' : '/'}$_modelUrl',
-                                    alt: "生成的 3D 模型",
-                                    ar: true,
-                                    arModes: const ['scene-viewer', 'webxr', 'quick-look'],
-                                    autoRotate: false,
-                                    cameraControls: true,
-                                    exposure: _exposure,
-                                    environmentImage: _environmentImage == 'neutral' ? null : _environmentImage,
-                                    loading: Loading.lazy,
-                                  ),
+                            child: _getModelViewer(colorScheme),
                           )
                         : _image != null
                             ? Image.file(_image!, fit: BoxFit.cover, width: double.infinity)
@@ -491,14 +563,42 @@ class _HomePageState extends State<HomePage> {
     final logger = context.read<InferenceLogger>();
     final colorScheme = Theme.of(context).colorScheme;
     
+    // 检查本地PLY文件是否存在
+    if (_localPlyPath == null || !File(_localPlyPath!).existsSync()) {
+      logger.error('PLY 文件不存在或路径为空: $_localPlyPath');
+      return Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'PLY 模型文件不存在',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.error),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '请重新生成模型',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     // 开始加载计时
     if (!_isPlyLoading) {
       _isPlyLoading = true;
       _plyLoadingTimer?.cancel();
-      _plyLoadingTimer = Timer(const Duration(seconds: 30), () {
+      _plyLoadingTimer = Timer(const Duration(seconds: 120), () { // 增加超时时间到120秒
         if (mounted && _isPlyLoading) {
-          logger.warning('PLY 模型加载超时（30秒）');
-          logger.info('提示: PLY 文件较大（约63MB），可能需要更长时间加载');
+          logger.warning('PLY 模型加载超时（120秒）');
+          logger.info('提示: PLY 文件较大，可能需要更长时间加载');
           logger.info('建议: 可以尝试使用较小的 PLY 文件或转换为 GLB 格式');
           setState(() {
             _isPlyLoading = false;
@@ -515,12 +615,26 @@ class _HomePageState extends State<HomePage> {
             return ErrorBoundary(
               onError: (error, stackTrace) {
                 logger.error('PLY 渲染错误: $error', error: error, stackTrace: stackTrace);
+                logger.error('PLY 路径: $_localPlyPath');
+                
+                // 检查文件是否存在
+                if (_localPlyPath != null) {
+                  final file = File(_localPlyPath!);
+                  logger.error('文件存在: ${file.existsSync()}');
+                  if (file.existsSync()) {
+                    logger.error('文件大小: ${file.lengthSync()} bytes');
+                  }
+                }
+                
                 setState(() {
                   _isPlyLoading = false;
                 });
               },
-              child: GaussianSplatterWidget(
-                assetPath: _localPlyPath!,
+              child: Container(
+                color: colorScheme.surfaceContainerLow,
+                child: GaussianSplatterWidget(
+                  assetPath: _localPlyPath!,
+                ),
               ),
             );
           },
@@ -559,6 +673,7 @@ class _HomePageState extends State<HomePage> {
               if (File(_localPlyPath!).existsSync()) {
                 final file = File(_localPlyPath!);
                 logger.debug('文件大小: ${file.lengthSync()} bytes');
+                logger.debug('文件修改时间: ${file.lastModifiedSync()}');
               }
             },
             child: const Icon(Icons.bug_report),
@@ -588,11 +703,24 @@ class _HomePageState extends State<HomePage> {
                           '文件较大，加载时间可能较长',
                           style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
+                        Text(
+                          '文件路径: ${_localPlyPath ?? 'N/A'}',
+                          style: const TextStyle(fontSize: 10, color: Colors.white50),
+                        ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
                               _isPlyLoading = true;
+                              _plyLoadingTimer?.cancel();
+                              _plyLoadingTimer = Timer(const Duration(seconds: 120), () {
+                                if (mounted && _isPlyLoading) {
+                                  logger.warning('PLY 模型加载超时（120秒）');
+                                  setState(() {
+                                    _isPlyLoading = false;
+                                  });
+                                }
+                              });
                             });
                           },
                           child: const Text('重试'),
