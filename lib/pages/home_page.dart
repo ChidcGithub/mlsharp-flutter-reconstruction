@@ -754,15 +754,20 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
+  FlutterErrorDetails? _errorDetails;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _error = null;
-      });
-    });
+    // 设置全局错误处理
+    FlutterError.onError = (FlutterErrorDetails details) {
+      if (mounted) {
+        setState(() {
+          _error = details.exception;
+          _errorDetails = details;
+        });
+      }
+    };
   }
 
   @override
@@ -783,24 +788,42 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
               ),
               const SizedBox(height: 8),
               Text(
-                '错误信息: $_error',
+                '错误信息: ${_error.toString()}',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _error = null;
-                                  });
-                                },
-                                child: const Text('重试'),
-                              ),            ],
+                onPressed: () {
+                  // 重置错误状态并调用外部错误处理函数
+                  setState(() {
+                    _error = null;
+                    _errorDetails = null;
+                  });
+                  // 如果有外部错误处理函数，则调用它
+                  if (widget.onError != null) {
+                    widget.onError!(_error!, _errorDetails?.stackTrace ?? StackTrace.empty);
+                  }
+                },
+                child: const Text('重试'),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return widget.child;
+    // 使用Builder包装widget.child以确保它正确构建
+    return Builder(
+      builder: (context) {
+        return widget.child;
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    FlutterError.onError = null;
+    super.dispose();
   }
 }
