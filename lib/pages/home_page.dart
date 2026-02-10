@@ -802,7 +802,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                   });
                   // 如果有外部错误处理函数，则调用它
                   if (widget.onError != null) {
-                    widget.onError!(_error!, _errorDetails?.stackTrace ?? StackTrace.empty);
+                    widget.onError!(_error!, _errorDetails?.stack ?? StackTrace.empty);
                   }
                 },
                 child: const Text('重试'),
