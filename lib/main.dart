@@ -114,7 +114,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<Widget> _pages = [
     const HomePage(),
-    const LocalInferencePage(),
     const HistoryPage(), // 历史记录页面
     const TerminalPage(),
     const SettingsPage(),
@@ -124,6 +123,50 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _showInferenceChoiceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('选择推理方式'),
+          content: const Text('请选择您想要的推理方式：'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+                // 导航到云端推理页面（当前的LocalInferencePage）
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LocalInferencePage()),
+                );
+              },
+              child: const Text('云端推理'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+                // TODO: 这里可以添加本地推理页面的导航
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => const LocalInferencePage()),
+                // );
+                // 暂时提示功能未实现
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('本地推理功能暂未实现')),
+                );
+              },
+              child: const Text('本地推理'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -136,11 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: _selectedIndex == 0 
           ? FloatingActionButton(
               onPressed: () {
-                // 导航到创建页面（本地推理页面）
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LocalInferencePage()),
-                );
+                _showInferenceChoiceDialog(context);
               },
               child: const Icon(Icons.add),
             )
@@ -154,11 +193,6 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: '主页',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.computer_outlined),
-            selectedIcon: Icon(Icons.computer),
-            label: '本地推理',
           ),
           NavigationDestination(
             icon: Icon(Icons.history),
