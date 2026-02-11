@@ -54,8 +54,17 @@ class MyApp extends StatelessWidget {
             ColorScheme darkColorScheme;
 
             if (settings.useDynamicColor && lightDynamic != null && darkDynamic != null) {
-              lightColorScheme = lightDynamic.harmonized();
-              darkColorScheme = darkDynamic.harmonized();
+              // 为Android 16优化动态颜色
+              lightColorScheme = lightDynamic.copyWith(
+                primaryContainer: lightDynamic.primaryContainer,
+                secondaryContainer: lightDynamic.secondaryContainer,
+                tertiaryContainer: lightDynamic.tertiaryContainer,
+              ).harmonized();
+              darkColorScheme = darkDynamic.copyWith(
+                primaryContainer: darkDynamic.primaryContainer,
+                secondaryContainer: darkDynamic.secondaryContainer,
+                tertiaryContainer: darkDynamic.tertiaryContainer,
+              ).harmonized();
             } else {
               lightColorScheme = ColorScheme.fromSeed(
                 seedColor: settings.seedColor,
