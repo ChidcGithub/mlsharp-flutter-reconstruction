@@ -1,8 +1,8 @@
-name: mlsharp_flutter
-description: "MLSharp 3D Maker - Flutter Reconstruction for Snapdragon GPU Acceleration"
+name: ansharp
+description: "Ansharp - Advanced 3D Model Generation Tool"
 publish_to: 'none'
 
-version: 0.0.3-preview.3+547
+version: 0.0.3-preview.4+550
 
 environment:
   sdk: ^3.10.8

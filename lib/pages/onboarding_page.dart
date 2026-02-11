@@ -58,10 +58,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   '支持 NVIDIA/AMD/Intel GPU',
                   '自动 GPU 显存管理',
                   '推理结果实时预览',
-                  '需搭配 MLSharp-3D-Maker-GPU 使用',
-                ],
-                footer: '建议前往 GitHub 下载后端项目：\nhttps://github.com/ChidcGithub/MLSharp-3D-Maker-GPU',
-              ),
+                                      '需搭配 MLSharp-3D-Maker-GPU 使用', // 保留原始后端项目名称                ],
+                                    footer: '建议前往 GitHub 下载后端项目：\nhttps://github.com/ChidcGithub/MLSharp-3D-Maker-GPU', // 保留原始后端项目名称              ),
               _buildFeaturePage(
                 colorScheme: colorScheme,
                 icon: Icons.phone_android_outlined,
@@ -188,8 +186,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           const SizedBox(height: 48),
           Text(
-            'MLSharp 3D Maker',
-            style: TextStyle(
+                              'Ansharp',            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,

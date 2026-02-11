@@ -84,7 +84,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
 
       final timestamp = DateTime.now().toString().replaceAll(':', '-').split('.')[0].replaceAll(' ', '_');
-      final fileName = 'mlsharp_logs_$timestamp.txt';
+      final fileName = 'ansharp_logs_$timestamp.txt';
 
       // 方案：先写入临时文件，然后调用系统分享/保存
       final tempDir = await getTemporaryDirectory();
@@ -93,7 +93,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       final result = await Share.shareXFiles(
         [XFile(tempFile.path)],
-        subject: 'MLSharp 3D Maker 日志导出',
+        subject: 'Ansharp 日志导出',
       );
 
       if (result.status == ShareResultStatus.success && mounted) {
@@ -597,7 +597,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                             const ListTile(
                               title: Text('项目主页'),
-                              subtitle: Text('github.com/ChidcGithub/mlsharp-flutter-reconstruction'),
+                              subtitle: Text('github.com/ChidcGithub/mlsharp-flutter-reconstruction'), // Ansharp项目
                               contentPadding: EdgeInsets.zero,
                             ),
                           ],
@@ -637,7 +637,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       // 从GitHub获取最新版本信息
       final response = await http.get(
-        Uri.parse('https://api.github.com/repos/ChidcGithub/mlsharp-flutter-reconstruction/releases/latest'),
+        Uri.parse('https://api.github.com/repos/ChidcGithub/mlsharp-flutter-reconstruction/releases/latest'), // 项目仍在原仓库
       );
 
       if (response.statusCode == 200) {

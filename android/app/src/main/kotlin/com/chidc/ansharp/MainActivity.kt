@@ -1,4 +1,4 @@
-package com.mlsharp.flutter.mlsharp_flutter
+package com.chidc.ansharp
 
 import io.flutter.embedding.android.FlutterActivity
 

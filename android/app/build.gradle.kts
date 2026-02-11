@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mlsharp.flutter.mlsharp_flutter"
+    namespace = "com.chidc.ansharp"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mlsharp.flutter.mlsharp_flutter"
+        applicationId = "com.chidc.ansharp"
         minSdk = 24 // 显式设置 minSdk 以确保兼容性
         targetSdk = 36 // 强制 targetSdk 也为 36
         versionCode = flutter.versionCode

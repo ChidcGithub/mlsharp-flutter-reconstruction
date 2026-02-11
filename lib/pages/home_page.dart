@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MLSharp 3D Maker'),
+        title: const Text('Ansharp'),
         elevation: 0,
         actions: [
           // 连接状态指示器

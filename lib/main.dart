@@ -77,7 +77,7 @@ class MyApp extends StatelessWidget {
             }
 
             return MaterialApp(
-              title: 'MLSharp 3D Maker',
+              title: 'Ansharp',
               theme: AppTheme.lightTheme(colorScheme: lightColorScheme),
               darkTheme: AppTheme.darkTheme(colorScheme: darkColorScheme),
               themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
@@ -85,10 +85,10 @@ class MyApp extends StatelessWidget {
                 SentryNavigatorObserver(),
               ],
               home: settings.onboardingCompleted 
-                  ? const MyHomePage(title: 'MLSharp 3D Maker')
+                  ? const MyHomePage(title: 'Ansharp')
                   : const OnboardingPage(),
               routes: {
-                '/home': (context) => const MyHomePage(title: 'MLSharp 3D Maker'),
+                '/home': (context) => const MyHomePage(title: 'Ansharp'),
                 '/onboarding': (context) => const OnboardingPage(),
               },
               debugShowCheckedModeBanner: false,
