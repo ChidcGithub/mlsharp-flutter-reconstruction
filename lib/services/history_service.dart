@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
+enum ViewerType { threejs, gaussianSplatter, webview }
+
 class HistoryItem {
   final String id;
   final String imageUrl;
@@ -11,6 +13,7 @@ class HistoryItem {
   final String localModelPath;
   final DateTime timestamp;
   final String imageFileName;
+  final ViewerType viewerType;
 
   HistoryItem({
     required this.id,
@@ -19,6 +22,7 @@ class HistoryItem {
     required this.localModelPath,
     required this.timestamp,
     required this.imageFileName,
+    this.viewerType = ViewerType.threejs, // 默认使用Three.js查看器
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +33,7 @@ class HistoryItem {
       'localModelPath': localModelPath,
       'timestamp': timestamp.toIso8601String(),
       'imageFileName': imageFileName,
+      'viewerType': viewerType.toString().split('.').last, // 只保存枚举值名称
     };
   }
 
@@ -40,7 +45,20 @@ class HistoryItem {
       localModelPath: json['localModelPath'],
       timestamp: DateTime.parse(json['timestamp']),
       imageFileName: json['imageFileName'],
+      viewerType: _parseViewerType(json['viewerType'] ?? 'threejs'),
     );
+  }
+
+  static ViewerType _parseViewerType(String type) {
+    switch (type) {
+      case 'gaussianSplatter':
+        return ViewerType.gaussianSplatter;
+      case 'webview':
+        return ViewerType.webview;
+      case 'threejs':
+      default:
+        return ViewerType.threejs;
+    }
   }
 }
 

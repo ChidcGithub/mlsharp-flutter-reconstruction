@@ -370,6 +370,14 @@ class _HomePageState extends State<HomePage> {
       final historyService = context.read<HistoryService>();
       final imageFileName = _image!.path.split('/').last;
       
+      // 根据模型格式选择合适的查看器类型
+      ViewerType viewerType;
+      if (modelUrl.toLowerCase().endsWith('.ply')) {
+        viewerType = ViewerType.gaussianSplatter; // PLY格式使用GaussianSplatter查看器
+      } else {
+        viewerType = ViewerType.threejs; // 其他格式使用Three.js查看器
+      }
+      
       final historyItem = HistoryItem(
         id: const Uuid().v4(),
         imageUrl: _image!.path,
@@ -377,6 +385,7 @@ class _HomePageState extends State<HomePage> {
         localModelPath: localModelPath,
         timestamp: DateTime.now(),
         imageFileName: imageFileName,
+        viewerType: viewerType,
       );
       
       await historyService.addToHistory(historyItem);
