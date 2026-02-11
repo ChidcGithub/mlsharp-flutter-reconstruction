@@ -388,6 +388,73 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+// 显示渲染器选择对话框
+  Future<void> _showRendererSelectionDialog() async {
+    final selected = await showDialog<ViewerType>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('选择渲染器'),
+          content: SizedBox(
+            width: double.maxFinite, // 确保内容宽度合适
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.threed_rotation),
+                  title: const Text('Three.js渲染器'),
+                  subtitle: const Text('适用于GLB/GLTF格式'),
+                  onTap: () => Navigator.pop(context, ViewerType.threejs),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.scatter_plot),
+                  title: const Text('Gaussian Splatter'),
+                  subtitle: const Text('适用于PLY格式'),
+                  onTap: () => Navigator.pop(context, ViewerType.gaussianSplatter),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.web),
+                  title: const Text('WebView渲染器'),
+                  subtitle: const Text('高级Three.js渲染'),
+                  onTap: () => Navigator.pop(context, ViewerType.webview),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      // 这里可以更新当前渲染器类型
+      // 由于当前实现没有状态保存渲染器类型，我们只是通知用户选择
+      final snackBar = SnackBar(
+        content: Text('已选择: ${_getViewerTypeName(selected)}'),
+        duration: const Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+  }
+  
+  String _getViewerTypeName(ViewerType type) {
+    switch (type) {
+      case ViewerType.threejs:
+        return 'Three.js渲染器';
+      case ViewerType.gaussianSplatter:
+        return 'Gaussian Splatter';
+      case ViewerType.webview:
+        return 'WebView渲染器';
+      default:
+        return '默认渲染器';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -503,26 +570,33 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 if (_modelUrl != null) ...[
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Column(
-                      children: [
-                        FloatingActionButton.small(
-                          heroTag: 'screenshot',
-                          onPressed: _takeScreenshot,
-                          child: const Icon(Icons.camera_alt),
-                        ),
-                        const SizedBox(height: 8),
-                        FloatingActionButton.small(
-                          heroTag: 'editor',
-                          onPressed: () => setState(() => _showEditor = !_showEditor),
-                          child: Icon(_showEditor ? Icons.close : Icons.tune),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_showEditor)
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Column(
+                                    children: [
+                                      FloatingActionButton.small(
+                                        heroTag: 'screenshot',
+                                        onPressed: _takeScreenshot,
+                                        child: const Icon(Icons.camera_alt),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      FloatingActionButton.small(
+                                        heroTag: 'editor',
+                                        onPressed: () => setState(() => _showEditor = !_showEditor),
+                                        child: Icon(_showEditor ? Icons.close : Icons.tune),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (_modelUrl != null)
+                                        FloatingActionButton.small(
+                                          heroTag: 'renderer',
+                                          onPressed: _showRendererSelectionDialog,
+                                          child: const Icon(Icons.view_in_ar),
+                                          tooltip: '选择渲染器',
+                                        ),
+                                    ],
+                                  ),
+                                ),                  if (_showEditor)
                     Positioned(
                       bottom: 12,
                       left: 12,

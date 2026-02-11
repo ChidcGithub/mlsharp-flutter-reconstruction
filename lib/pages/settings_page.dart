@@ -126,89 +126,90 @@ class _SettingsPageState extends State<SettingsPage> {
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.primaryContainer,
+                      ),
+                      child: Icon(
+                        Icons.palette,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                    title: const Text(
+                      '外观',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.primaryContainer,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            SwitchListTile(
+                              title: const Text('深色模式'),
+                              subtitle: const Text('启用深色主题'),
+                              value: settings.isDarkMode,
+                              onChanged: (value) {
+                                settings.setDarkMode(value);
+                              },
+                              contentPadding: EdgeInsets.zero,
                             ),
-                            child: Icon(
-                              Icons.palette,
-                              color: colorScheme.onPrimaryContainer,
+                            const Divider(),
+                            SwitchListTile(
+                              title: const Text('动态配色'),
+                              subtitle: const Text('基于系统壁纸自动调整颜色 (Android 12+)'),
+                              value: settings.useDynamicColor,
+                              onChanged: (value) {
+                                settings.setUseDynamicColor(value);
+                              },
+                              contentPadding: EdgeInsets.zero,
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '外观',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SwitchListTile(
-                        title: const Text('深色模式'),
-                        subtitle: const Text('启用深色主题'),
-                        value: settings.isDarkMode,
-                        onChanged: (value) {
-                          settings.setDarkMode(value);
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const Divider(),
-                      SwitchListTile(
-                        title: const Text('动态配色'),
-                        subtitle: const Text('基于系统壁纸自动调整颜色 (Android 12+)'),
-                        value: settings.useDynamicColor,
-                        onChanged: (value) {
-                          settings.setUseDynamicColor(value);
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      if (!settings.useDynamicColor) ...[
-                        const SizedBox(height: 12),
-                        const Text(
-                          '选择主题种子颜色',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 50,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _seedColors.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              final color = _seedColors[index];
-                              final isSelected = settings.seedColor.value == color.value;
-                              return GestureDetector(
-                                onTap: () => settings.setSeedColor(color),
-                                child: Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                    border: isSelected
-                                        ? Border.all(color: colorScheme.onSurface, width: 3)
-                                        : null,
-                                  ),
-                                  child: isSelected
-                                      ? const Icon(Icons.check, color: Colors.white)
-                                      : null,
+                            if (!settings.useDynamicColor) ...[
+                              const SizedBox(height: 12),
+                              const Text(
+                                '选择主题种子颜色',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 50,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _seedColors.length,
+                                  separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                  itemBuilder: (context, index) {
+                                    final color = _seedColors[index];
+                                    final isSelected = settings.seedColor.value == color.value;
+                                    return GestureDetector(
+                                      onTap: () => settings.setSeedColor(color),
+                                      child: Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          shape: BoxShape.circle,
+                                          border: isSelected
+                                              ? Border.all(color: colorScheme.onSurface, width: 3)
+                                              : null,
+                                        ),
+                                        child: isSelected
+                                            ? const Icon(Icons.check, color: Colors.white)
+                                            : null,
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
@@ -219,134 +220,135 @@ class _SettingsPageState extends State<SettingsPage> {
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.secondaryContainer,
+                      ),
+                      child: Icon(
+                        Icons.cloud_queue,
+                        color: colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                    title: const Text(
+                      '连接设置',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.secondaryContainer,
-                            ),
-                            child: Icon(
-                              Icons.cloud_queue,
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '连接设置',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _urlController,
-                        decoration: InputDecoration(
-                          labelText: '后端服务器地址',
-                          hintText: 'http://192.168.x.x:8000',
-                          prefixIcon: const Icon(Icons.link),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.check),
-                            onPressed: () {
-                              settings.setBackendUrl(_urlController.text);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('连接地址已保存')),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '当前连接: ${settings.backendUrl}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('网络诊断', style: TextStyle(fontWeight: FontWeight.bold)),
-                          if (_isDiagnosing)
-                            const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          else
-                            FilledButton.icon(
-                              onPressed: _runDiagnostics,
-                              icon: const Icon(Icons.network_check, size: 18),
-                              label: const Text('诊断'),
-                              style: FilledButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _urlController,
+                              decoration: InputDecoration(
+                                labelText: '后端服务器地址',
+                                hintText: 'http://192.168.x.x:8000',
+                                prefixIcon: const Icon(Icons.link),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.check),
+                                  onPressed: () {
+                                    settings.setBackendUrl(_urlController.text);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('连接地址已保存')),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
-                        ],
-                      ),
-                      if (_diagnosticResult != null) ...[
-                        const SizedBox(height: 12),
-                        Card(
-                          elevation: 0,
-                          color: _diagnosticResult!.isConnected 
-                              ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.1)
-                              : colorScheme.errorContainer.withValues(alpha: 0.2),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      _diagnosticResult!.isConnected ? Icons.check_circle : Icons.warning,
-                                      size: 16,
-                                      color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _diagnosticResult!.message,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
-                                      ),
-                                    ),
-                                    if (_diagnosticResult!.latency != null) ...[
-                                      const Spacer(),
-                                      Text('延迟: ${_diagnosticResult!.latency}ms', style: const TextStyle(fontSize: 12)),
-                                    ],
-                                  ],
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '当前连接: ${settings.backendUrl}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onPrimaryContainer,
                                 ),
-                                const SizedBox(height: 8),
-                                Text('连接类型: ${_diagnosticResult!.connectionType}', style: const TextStyle(fontSize: 12)),
-                                Text('VPN 状态: ${_diagnosticResult!.isVpnActive ? "已开启" : "未开启"}', style: const TextStyle(fontSize: 12)),
-                                if (_diagnosticResult!.suggestions.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  const Text('建议:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                  ..._diagnosticResult!.suggestions.map((s) => Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text('• $s', style: const TextStyle(fontSize: 11)),
-                                  )),
-                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('网络诊断', style: TextStyle(fontWeight: FontWeight.bold)),
+                                if (_isDiagnosing)
+                                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                else
+                                  FilledButton.icon(
+                                    onPressed: _runDiagnostics,
+                                    icon: const Icon(Icons.network_check, size: 18),
+                                    label: const Text('诊断'),
+                                    style: FilledButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
                               ],
                             ),
-                          ),
+                            if (_diagnosticResult != null) ...[
+                              const SizedBox(height: 12),
+                              Card(
+                                elevation: 0,
+                                color: _diagnosticResult!.isConnected 
+                                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.1)
+                                    : colorScheme.errorContainer.withValues(alpha: 0.2),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            _diagnosticResult!.isConnected ? Icons.check_circle : Icons.warning,
+                                            size: 16,
+                                            color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _diagnosticResult!.message,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
+                                            ),
+                                          ),
+                                          if (_diagnosticResult!.latency != null) ...[
+                                            const Spacer(),
+                                            Text('延迟: ${_diagnosticResult!.latency}ms', style: const TextStyle(fontSize: 12)),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text('连接类型: ${_diagnosticResult!.connectionType}', style: const TextStyle(fontSize: 12)),
+                                      Text('VPN 状态: ${_diagnosticResult!.isVpnActive ? "已开启" : "未开启"}', style: const TextStyle(fontSize: 12)),
+                                      if (_diagnosticResult!.suggestions.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        const Text('建议:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                        ..._diagnosticResult!.suggestions.map((s) => Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text('• $s', style: const TextStyle(fontSize: 11)),
+                                        )),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
@@ -357,39 +359,40 @@ class _SettingsPageState extends State<SettingsPage> {
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.tertiaryContainer,
-                            ),
-                            child: Icon(
-                              Icons.storage,
-                              color: colorScheme.onTertiaryContainer,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '数据管理',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.tertiaryContainer,
                       ),
-                      const SizedBox(height: 12),
-                      ListTile(
-                        leading: const Icon(Icons.download),
-                        title: const Text('导出日志'),
-                        subtitle: const Text('选择位置保存应用日志文件'),
-                        onTap: _exportLogs,
-                        contentPadding: EdgeInsets.zero,
+                      child: Icon(
+                        Icons.storage,
+                        color: colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                    title: const Text(
+                      '数据管理',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.download),
+                              title: const Text('导出日志'),
+                              subtitle: const Text('选择位置保存应用日志文件'),
+                              onTap: _exportLogs,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -401,51 +404,56 @@ class _SettingsPageState extends State<SettingsPage> {
               Card(
                 margin: const EdgeInsets.only(bottom: 32),
                 elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    title: const Text(
+                      '关于',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.surfaceContainerHighest,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            if (_packageInfo != null) ...[
+                              ListTile(
+                                title: const Text('应用名称'),
+                                subtitle: Text(_packageInfo!.appName),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              ListTile(
+                                title: const Text('版本信息'),
+                                subtitle: Text('v${_packageInfo!.version} (构建号: ${_packageInfo!.buildNumber})'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ],
+                            const Divider(),
+                            const ListTile(
+                              title: Text('开发者'),
+                              subtitle: Text('Chidc, Manus AI'),
+                              contentPadding: EdgeInsets.zero,
                             ),
-                            child: Icon(
-                              Icons.info_outline,
-                              color: colorScheme.onSurfaceVariant,
+                            const ListTile(
+                              title: Text('项目主页'),
+                              subtitle: Text('github.com/ChidcGithub/mlsharp-flutter-reconstruction'),
+                              contentPadding: EdgeInsets.zero,
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '关于',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        title: const Text('应用名称'),
-                        subtitle: Text(_packageInfo?.appName ?? 'MLSharp 3D Maker'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                                    ListTile(
-                                      leading: Badge(
-                                        label: Text(_packageInfo?.version ?? '0.0.1'),
-                                        child: const Icon(Icons.info),
-                                      ),
-                                      title: const Text('版本信息'),
-                                      subtitle: Text('当前版本: ${_packageInfo?.version ?? '0.0.1'}'),
-                                      contentPadding: EdgeInsets.zero,
-                                    ),                      const Divider(),
-                      const ListTile(
-                        title: Text('制作人'),
-                        subtitle: Text('Chidc, Manus AI'),
-                        contentPadding: EdgeInsets.zero,
+                          ],
+                        ),
                       ),
                     ],
                   ),
