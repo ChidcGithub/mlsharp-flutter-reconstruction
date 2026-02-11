@@ -31,53 +31,61 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _buildHistoryList() {
     return Consumer<HistoryService>(
       builder: (context, historyService, child) {
-        return FutureBuilder<List<HistoryItem>>(
-          future: historyService.getHistory(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+        return RefreshIndicator(
+          onRefresh: () async {
+            // 刷新历史记录列表
+            if (mounted) {
+              setState(() {});
             }
-
-            if (snapshot.hasError) {
-              return Center(child: Text('加载历史记录出错: ${snapshot.error}'));
-            }
-
-            final historyItems = snapshot.data ?? [];
-
-            if (historyItems.isEmpty) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.history,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      '暂无历史记录',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '生成3D模型后将在这里显示',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: historyItems.length,
-              itemBuilder: (context, index) {
-                final item = historyItems[index];
-                return _buildHistoryItemCard(item);
-              },
-            );
           },
+          child: FutureBuilder<List<HistoryItem>>(
+            future: historyService.getHistory(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('加载历史记录出错: ${snapshot.error}'));
+              }
+
+              final historyItems = snapshot.data ?? [];
+
+              if (historyItems.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.history,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '暂无历史记录',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '生成3D模型后将在这里显示',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: historyItems.length,
+                itemBuilder: (context, index) {
+                  final item = historyItems[index];
+                  return _buildHistoryItemCard(item);
+                },
+              );
+            },
+          ),
         );
       },
     );
