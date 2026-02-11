@@ -106,8 +106,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<String> _downloadModel(String url) async {
-    final logger = context.read<InferenceLogger>();
     try {
+      final logger = context.read<InferenceLogger>();
       String fullUrl = url;
       if (!url.startsWith('http')) {
         final backendUrl = context.read<AppSettingsProvider>().backendUrl;
@@ -145,15 +145,18 @@ class _HomePageState extends State<HomePage> {
         return '';
       }
     } catch (e) {
-      logger.error('下载模型失败', error: e);
-      logger.error('错误详情: ${e.toString()}');
+      if (mounted) {
+        final logger = context.read<InferenceLogger>();
+        logger.error('下载模型失败', error: e);
+        logger.error('错误详情: ${e.toString()}');
+      }
       return '';
     }
   }
 
   Future<void> _downloadPly(String url) async {
-    final logger = context.read<InferenceLogger>();
     try {
+      final logger = context.read<InferenceLogger>();
       String fullUrl = url;
       if (!url.startsWith('http')) {
         final backendUrl = context.read<AppSettingsProvider>().backendUrl;
@@ -177,38 +180,21 @@ class _HomePageState extends State<HomePage> {
         logger.debug('文件是否存在: ${plyFile.existsSync()}');
         logger.debug('文件大小: ${plyFile.lengthSync()} bytes');
         
-        setState(() {
-          _localPlyPath = plyFile.path;
-        });
+        if (mounted) {
+          setState(() {
+            _localPlyPath = plyFile.path;
+          });
+        }
         
-        logger.success('PLY 文件准备就绪，路径: $_localPlyPath');
-        
-        // 确保模型视图更新
-        setState(() {
-          _isPlyLoading = false;
-        });
+        logger.success('PLY 文件准备就绪，路径: ${plyFile.path}');
       } else {
         logger.error('PLY 下载失败，状态码: ${response.statusCode}');
         logger.debug('响应内容: ${response.body}');
-        
-        // 尝试检查是否是302重定向
-        if (response.statusCode == 302 || response.statusCode == 301) {
-          final redirectUrl = response.headers['location'];
-          if (redirectUrl != null) {
-            logger.info('检测到重定向，尝试新URL: $redirectUrl');
-            await _downloadPly(redirectUrl);
-          }
-        }
       }
     } catch (e) {
-      logger.error('下载 PLY 失败', error: e);
-      logger.error('错误详情: ${e.toString()}');
-      
-      // 更新状态以便用户知道下载失败
       if (mounted) {
-        setState(() {
-          _isPlyLoading = false;
-        });
+        final logger = context.read<InferenceLogger>();
+        logger.error('下载 PLY 失败', error: e);
       }
     }
   }
@@ -262,8 +248,10 @@ class _HomePageState extends State<HomePage> {
             localModelPath = await _downloadModel(url);
           }
           
-          // 保存到历史记录
-          await _saveToHistory(url, localModelPath);
+          // 保存到历史记录 - 在异步操作中检查mounted状态
+          if (mounted) {
+            await _saveToHistory(url, localModelPath);
+          }
           
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -365,8 +353,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _saveToHistory(String modelUrl, String localModelPath) async {
-    final logger = context.read<InferenceLogger>();
     try {
+      if (!mounted) return;
+      
+      final logger = context.read<InferenceLogger>();
       final historyService = context.read<HistoryService>();
       final imageFileName = _image!.path.split('/').last;
       
@@ -391,7 +381,10 @@ class _HomePageState extends State<HomePage> {
       await historyService.addToHistory(historyItem);
       logger.info('模型已保存到历史记录: $imageFileName');
     } catch (e) {
-      logger.error('保存模型到历史记录失败', error: e);
+      if (mounted) {
+        final logger = context.read<InferenceLogger>();
+        logger.error('保存模型到历史记录失败', error: e);
+      }
     }
   }
 
