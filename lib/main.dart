@@ -133,6 +133,19 @@ class _MyHomePageState extends State<MyHomePage> {
         index: _selectedIndex,
         children: _pages,
       ),
+      floatingActionButton: _selectedIndex == 0 
+          ? FloatingActionButton(
+              onPressed: () {
+                // 导航到创建页面（本地推理页面）
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LocalInferencePage()),
+                );
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: _onItemTapped,
         selectedIndex: _selectedIndex,

@@ -23,24 +23,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  File? _image;
-  String? _modelUrl;
-  String? _localPlyPath;
-  bool _isGenerating = false;
   bool _isConnected = false;
-  final ImagePicker _picker = ImagePicker();
   late BackendApiService _apiService;
   
-  // 编辑器参数
-  double _exposure = 1.0;
-  String _environmentImage = 'neutral';
-  final ScreenshotController _screenshotController = ScreenshotController();
-  bool _showEditor = false;
-  
-  // PLY 加载状态
-  bool _isPlyLoading = false;
-  Timer? _plyLoadingTimer;
-
   @override
   void initState() {
     super.initState();
@@ -63,7 +48,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _plyLoadingTimer?.cancel();
     super.dispose();
   }
 
@@ -463,71 +447,212 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('MLSharp 3D Maker'),
         elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 连接状态卡片
-            Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              elevation: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _isConnected 
-                      ? colorScheme.primaryContainer
-                      : colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
+        actions: [
+          // 连接状态指示器
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _isConnected 
+                  ? colorScheme.primaryContainer
+                  : colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isConnected ? Icons.cloud_done : Icons.cloud_off,
+                  size: 16,
+                  color: _isConnected ? colorScheme.primary : colorScheme.error,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _isConnected ? Icons.check_circle : Icons.error,
-                      color: _isConnected ? colorScheme.primary : colorScheme.error,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isConnected ? '后端已连接' : '后端未连接',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: _isConnected ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
-                            ),
+                const SizedBox(width: 4),
+                Text(
+                  _isConnected ? '已连接' : '未连接',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _isConnected ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      body: Consumer<HistoryService>(
+        builder: (context, historyService, child) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              // 刷新历史记录列表
+              if (mounted) {
+                setState(() {});
+              }
+            },
+            child: FutureBuilder<List<HistoryItem>>(
+              future: historyService.getHistory(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('加载历史记录出错: ${snapshot.error}'));
+                }
+
+                final historyItems = snapshot.data ?? [];
+
+                if (historyItems.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 80,
+                          color: colorScheme.primary.withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          '还没有作品',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            context.watch<AppSettingsProvider>().backendUrl,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _isConnected 
-                                  ? colorScheme.onPrimaryContainer.withValues(alpha: 0.7) 
-                                  : colorScheme.onErrorContainer.withValues(alpha: 0.7),
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '点击右下角的 + 按钮开始创建您的第一个3D作品',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurfaceVariant,
                           ),
-                        ],
-                      ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    FilledButton.icon(
-                      onPressed: _checkConnection,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('刷新'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _isConnected ? colorScheme.primary : colorScheme.error,
-                        foregroundColor: _isConnected ? colorScheme.onPrimary : colorScheme.onError,
+                  );
+                }
+
+                // 使用GridView显示历史记录项目，类似小红书的两列布局
+                return GridView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 两列布局
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.85, // 控制项目的宽高比
+                  ),
+                  itemCount: historyItems.length,
+                  itemBuilder: (context, index) {
+                    final item = historyItems[index];
+                    return _buildHistoryItemGrid(item);
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // 构建网格项
+  Widget _buildHistoryItemGrid(HistoryItem item) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      child: InkWell(
+        onTap: () {
+          // 导航到历史记录详情页面
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HistoryItemViewer(historyItem: item),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 图片预览
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                child: Image.file(
+                  File(item.imageUrl),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 32,
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
+            // 底部信息
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.imageFileName,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 10,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDateTime(item.timestamp),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}天前';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}小时前';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}分钟前';
+    } else {
+      return '刚刚';
+    }
+  }
             const SizedBox(height: 24),
 
             // 3D 模型预览卡片
