@@ -261,6 +261,37 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
   }
+
+  Future<void> _showDeleteAllDialog() async {
+    final historyService = context.read<HistoryService>();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清空历史记录'),
+        content: const Text('确定要清空所有历史记录吗？此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await historyService.clearHistory();
+      if (mounted) {
+        setState(() {}); // 刷新列表
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('历史记录已清空')),
+      );
+    }
+  }
 }
 
 class HistoryItemViewer extends StatefulWidget {
