@@ -2,7 +2,7 @@ name: mlsharp_flutter
 description: "MLSharp 3D Maker - Flutter Reconstruction for Snapdragon GPU Acceleration"
 publish_to: 'none'
 
-version: 0.0.2-rc3+413
+version: 0.0.2-rc3+445
 
 environment:
   sdk: ^3.10.8
