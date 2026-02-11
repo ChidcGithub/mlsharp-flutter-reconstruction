@@ -334,7 +334,7 @@ class _HistoryItemViewerState extends State<HistoryItemViewer> {
                 icon: Icon(Icons.scatter_plot),
               ),
               ButtonSegment(
-                value: ViewerType.webView,
+                value: ViewerType.webview,
                 label: Text('Web'),
                 icon: Icon(Icons.web),
               ),
@@ -344,8 +344,8 @@ class _HistoryItemViewerState extends State<HistoryItemViewer> {
               setState(() {
                 _currentViewerType = newSelection.first;
               });
-              // 通知父组件更新查看器类型
-              widget.historyItem.viewerType = _currentViewerType;
+              // 注意：HistoryItem是不可变的，我们不能直接修改它
+              // 如果需要保存查看器类型更改，需要通过其他方式实现
             },
           ),
         ],
