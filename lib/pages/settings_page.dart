@@ -124,6 +124,8 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               // 外观设置卡片
               Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -215,6 +217,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
               // 连接设置卡片
               Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -263,14 +267,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '当前连接: ${settings.backendUrl}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: colorScheme.primary,
+                            color: colorScheme.onPrimaryContainer,
                           ),
                         ),
                       ),
@@ -284,63 +288,62 @@ class _SettingsPageState extends State<SettingsPage> {
                           if (_isDiagnosing)
                             const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           else
-                            TextButton.icon(
+                            FilledButton.icon(
                               onPressed: _runDiagnostics,
                               icon: const Icon(Icons.network_check, size: 18),
-                              label: const Text('一键诊断'),
+                              label: const Text('诊断'),
+                              style: FilledButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                              ),
                             ),
                         ],
                       ),
                       if (_diagnosticResult != null) ...[
                         const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _diagnosticResult!.isConnected 
-                                ? Colors.green.withOpacity(0.1) 
-                                : Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    _diagnosticResult!.isConnected ? Icons.check_circle : Icons.warning,
-                                    size: 16,
-                                    color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _diagnosticResult!.message,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: _diagnosticResult!.isConnected ? Colors.green : Colors.orange,
+                        Card(
+                          elevation: 0,
+                          color: _diagnosticResult!.isConnected 
+                              ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.1)
+                              : colorScheme.errorContainer.withValues(alpha: 0.2),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _diagnosticResult!.isConnected ? Icons.check_circle : Icons.warning,
+                                      size: 16,
+                                      color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
                                     ),
-                                  ),
-                                  if (_diagnosticResult!.latency != null) ...[
-                                    const Spacer(),
-                                    Text('延迟: ${_diagnosticResult!.latency}ms', style: const TextStyle(fontSize: 12)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _diagnosticResult!.message,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _diagnosticResult!.isConnected ? colorScheme.primary : colorScheme.error,
+                                      ),
+                                    ),
+                                    if (_diagnosticResult!.latency != null) ...[
+                                      const Spacer(),
+                                      Text('延迟: ${_diagnosticResult!.latency}ms', style: const TextStyle(fontSize: 12)),
+                                    ],
                                   ],
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text('连接类型: ${_diagnosticResult!.connectionType}', style: const TextStyle(fontSize: 12)),
-                              Text('VPN 状态: ${_diagnosticResult!.isVpnActive ? "已开启" : "未开启"}', style: const TextStyle(fontSize: 12)),
-                              if (_diagnosticResult!.suggestions.isNotEmpty) ...[
+                                ),
                                 const SizedBox(height: 8),
-                                const Text('建议:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                ..._diagnosticResult!.suggestions.map((s) => Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text('• $s', style: const TextStyle(fontSize: 11)),
-                                )),
+                                Text('连接类型: ${_diagnosticResult!.connectionType}', style: const TextStyle(fontSize: 12)),
+                                Text('VPN 状态: ${_diagnosticResult!.isVpnActive ? "已开启" : "未开启"}', style: const TextStyle(fontSize: 12)),
+                                if (_diagnosticResult!.suggestions.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  const Text('建议:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  ..._diagnosticResult!.suggestions.map((s) => Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text('• $s', style: const TextStyle(fontSize: 11)),
+                                  )),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -352,6 +355,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
               // 数据管理卡片
               Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -394,6 +399,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
               // 关于应用卡片
               Card(
+                margin: const EdgeInsets.only(bottom: 32),
+                elevation: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(

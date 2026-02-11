@@ -57,7 +57,7 @@ class _TerminalPageState extends State<TerminalPage> {
             onPressed: () {
               context.read<InferenceLogger>().clearLogs();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('日志已清空')),
+                SnackBar(content: Text('日志已清空')),
               );
             },
             tooltip: '清空日志',

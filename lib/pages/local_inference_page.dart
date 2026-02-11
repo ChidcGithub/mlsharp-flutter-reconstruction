@@ -172,11 +172,11 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
+                    FilledButton.icon(
                       onPressed: _pickModel,
                       icon: const Icon(Icons.folder_open),
                       label: const Text('选择 ONNX 模型'),
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                       ),
                     ),
@@ -303,11 +303,11 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
+                    FilledButton.icon(
                       onPressed: _pickImage,
                       icon: const Icon(Icons.photo_library),
                       label: const Text('选择图片'),
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                       ),
                     ),
@@ -332,11 +332,11 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                 ),
               )
             else
-              ElevatedButton.icon(
+              FilledButton.icon(
                 onPressed: _runInference,
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('开始推理'),
-                style: ElevatedButton.styleFrom(
+                style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                 ),
               ),

@@ -403,57 +403,62 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 连接状态卡片
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: _isConnected 
-                    ? colorScheme.primaryContainer.withValues(alpha: 0.2)
-                    : colorScheme.errorContainer.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _isConnected ? colorScheme.primary : colorScheme.error,
-                  width: 1.5,
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _isConnected 
+                      ? colorScheme.primaryContainer
+                      : colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _isConnected ? Icons.check_circle : Icons.error,
-                    color: _isConnected ? colorScheme.primary : colorScheme.error,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isConnected ? '后端已连接' : '后端未连接',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: _isConnected ? colorScheme.primary : colorScheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          context.watch<AppSettingsProvider>().backendUrl,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: (_isConnected ? colorScheme.primary : colorScheme.error).withValues(alpha: 0.7),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                child: Row(
+                  children: [
+                    Icon(
+                      _isConnected ? Icons.check_circle : Icons.error,
+                      color: _isConnected ? colorScheme.primary : colorScheme.error,
+                      size: 24,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _checkConnection,
-                    tooltip: '重新检查连接',
-                    color: _isConnected ? colorScheme.primary : colorScheme.error,
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isConnected ? '后端已连接' : '后端未连接',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: _isConnected ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            context.watch<AppSettingsProvider>().backendUrl,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _isConnected 
+                                  ? colorScheme.onPrimaryContainer.withValues(alpha: 0.7) 
+                                  : colorScheme.onErrorContainer.withValues(alpha: 0.7),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _checkConnection,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('刷新'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _isConnected ? colorScheme.primary : colorScheme.error,
+                        foregroundColor: _isConnected ? colorScheme.onPrimary : colorScheme.onError,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),

@@ -26,7 +26,13 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('历史记录'),
-        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            onPressed: _showDeleteAllDialog,
+            tooltip: '清空历史记录',
+          ),
+        ],
       ),
       body: _buildHistoryList(),
     );
