@@ -321,41 +321,32 @@ class _HistoryItemViewerState extends State<HistoryItemViewer> {
         title: Text(widget.historyItem.imageFileName),
         elevation: 0,
         actions: [
-          PopupMenuButton<ViewerType>(
-            icon: const Icon(Icons.view_carousel),
-            onSelected: _changeViewerType,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
+          SegmentedButton<ViewerType>(
+            segments: const [
+              ButtonSegment(
                 value: ViewerType.threejs,
-                child: Row(
-                  children: [
-                    Icon(Icons.threed_rotation),
-                    SizedBox(width: 8),
-                    Text('Three.js查看器'),
-                  ],
-                ),
+                label: Text('3D'),
+                icon: Icon(Icons.threed_rotation),
               ),
-              const PopupMenuItem(
+              ButtonSegment(
                 value: ViewerType.gaussianSplatter,
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome),
-                    SizedBox(width: 8),
-                    Text('Gaussian Splatter'),
-                  ],
-                ),
+                label: Text('PLY'),
+                icon: Icon(Icons.scatter_plot),
               ),
-              const PopupMenuItem(
-                value: ViewerType.webview,
-                child: Row(
-                  children: [
-                    Icon(Icons.web),
-                    SizedBox(width: 8),
-                    Text('WebView查看器'),
-                  ],
-                ),
+              ButtonSegment(
+                value: ViewerType.webView,
+                label: Text('Web'),
+                icon: Icon(Icons.web),
               ),
             ],
+            selected: {_currentViewerType},
+            onSelectionChanged: (Set<ViewerType> newSelection) {
+              setState(() {
+                _currentViewerType = newSelection.first;
+              });
+              // 通知父组件更新查看器类型
+              widget.historyItem.viewerType = _currentViewerType;
+            },
           ),
         ],
       ),

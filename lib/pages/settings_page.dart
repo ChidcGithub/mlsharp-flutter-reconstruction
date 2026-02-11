@@ -433,12 +433,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         subtitle: Text(_packageInfo?.appName ?? 'MLSharp 3D Maker'),
                         contentPadding: EdgeInsets.zero,
                       ),
-                      ListTile(
-                        title: const Text('版本号'),
-                        subtitle: Text(_packageInfo?.version ?? '0.0.1'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const Divider(),
+                                    ListTile(
+                                      leading: Badge(
+                                        label: Text(_packageInfo?.version ?? '0.0.1'),
+                                        child: const Icon(Icons.info),
+                                      ),
+                                      title: const Text('版本信息'),
+                                      subtitle: Text('当前版本: ${_packageInfo?.version ?? '0.0.1'}'),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),                      const Divider(),
                       const ListTile(
                         title: Text('制作人'),
                         subtitle: Text('Chidc, Manus AI'),

@@ -52,7 +52,7 @@ class _TerminalPageState extends State<TerminalPage> {
       appBar: AppBar(
         title: const Text('终端日志'),
         actions: [
-          IconButton(
+          IconButton.filledTonal(
             icon: const Icon(Icons.delete_outline),
             onPressed: () {
               context.read<InferenceLogger>().clearLogs();
@@ -62,7 +62,7 @@ class _TerminalPageState extends State<TerminalPage> {
             },
             tooltip: '清空日志',
           ),
-          IconButton(
+          IconButton.filledTonal(
             icon: const Icon(Icons.vertical_align_bottom),
             onPressed: _scrollToBottom,
             tooltip: '滚动到底部',

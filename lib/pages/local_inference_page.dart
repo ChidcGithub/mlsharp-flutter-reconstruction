@@ -223,17 +223,34 @@ class _LocalInferencePageState extends State<LocalInferencePage> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: const Text('启用骁龙 NPU'),
-                      subtitle: const Text('使用 NPU 加速推理'),
-                      value: _useNpu,
-                      onChanged: (value) {
-                        setState(() {
-                          _useNpu = value;
-                        });
-                        context.read<InferenceLogger>().info('NPU 加速已${value ? "开启" : "关闭"}');
-                      },
-                      contentPadding: EdgeInsets.zero,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('加速选项', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment<bool>(
+                              value: false,
+                              label: Text('CPU'),
+                              icon: Icon(Icons.memory),
+                            ),
+                            ButtonSegment<bool>(
+                              value: true,
+                              label: Text('NPU'),
+                              icon: Icon(Icons.auto_awesome),
+                            ),
+                          ],
+                          selected: {_useNpu},
+                          onSelectionChanged: (Set<bool> newSelection) {
+                            final newValue = newSelection.first;
+                            setState(() {
+                              _useNpu = newValue;
+                            });
+                            context.read<InferenceLogger>().info('推理加速已设置为: ${newValue ? "NPU" : "CPU"}');
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
