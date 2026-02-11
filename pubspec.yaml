@@ -34,6 +34,8 @@ dependencies:
   permission_handler: ^11.1.0
   uuid: ^4.0.0
   webview_flutter: ^4.8.0
+  webview_flutter_android: ^3.16.2
+  webview_flutter_wkwebview: ^3.14.2
 
 dev_dependencies:
   flutter_test:

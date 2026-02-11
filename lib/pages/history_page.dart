@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:flutter_gaussian_splatter/widgets/gaussian_splatter_widget.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../services/history_service.dart';
 import '../services/inference_logger.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -468,17 +471,27 @@ class _HistoryItemViewerState extends State<HistoryItemViewer> {
       // 从viewer.html创建WebView
       final String htmlContent = _createViewerHtml(widget.historyItem.localModelPath);
       
-      return WebView(
-        initialUrl: Uri.dataFromString(
-          htmlContent,
-          mimeType: 'text/html',
-          encoding: Encoding.getByName('utf-8'),
-        ).toString(),
-        javascriptMode: JavascriptMode.unrestricted,
-        onPageFinished: (String url) {
-          // 页面加载完成后可能需要执行一些初始化
-        },
-      );
+      late final WebViewController controller;
+      controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageFinished: (String url) {
+              // 页面加载完成后可能需要执行一些初始化
+            },
+          ),
+        )
+        ..loadRequest(
+          Uri.parse(
+            Uri.dataFromString(
+              htmlContent,
+              mimeType: 'text/html',
+              encoding: Encoding.getByName('utf-8'),
+            ).toString(),
+          ),
+        );
+
+      return WebViewWidget(controller: controller);
     } catch (e) {
       return Container(
         color: colorScheme.surfaceContainerLow,
