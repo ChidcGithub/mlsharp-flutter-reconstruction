@@ -130,6 +130,174 @@ class _SettingsPageState extends State<SettingsPage> {
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
+              // 更新检查卡片 - 移动到关于卡片之前
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    maintainState: true,
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.tertiaryContainer,
+                      ),
+                      child: Icon(
+                        Icons.system_update,
+                        color: colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                    title: const Text(
+                      '更新检查',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_isCheckingUpdate)
+                              const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Row(
+                                  children: [
+                                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                    SizedBox(width: 12),
+                                    Text('正在检查更新...'),
+                                  ],
+                                ),
+                              )
+                            else ...[
+                              if (_latestVersion != null)
+                                Card(
+                                  color: _hasUpdate 
+                                      ? colorScheme.primaryContainer 
+                                      : colorScheme.surfaceContainerHighest,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _hasUpdate ? '有新版本可用' : '已是最新版本',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _hasUpdate ? colorScheme.primary : colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text('当前版本: v${_packageInfo?.version ?? '未知'} (构建号: ${_packageInfo?.buildNumber ?? '未知'})'),
+                                        if (_hasUpdate && _latestVersion != null) ...[
+                                          Text('最新版本: v${_latestVersion!}'),
+                                          const SizedBox(height: 8),
+                                                                    if (_updateUrl != null)
+                                                                      FilledButton.icon(
+                                                                        onPressed: () => _openUpdatePage(_updateUrl!),                                              icon: const Icon(Icons.open_in_new, size: 16),
+                                              label: const Text('前往下载'),
+                                              style: FilledButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              ),
+                                            ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              FilledButton.tonal(
+                                onPressed: _checkForUpdates,
+                                child: const Text('检查更新'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 关于应用卡片 - 包含应用信息
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    maintainState: true,
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    title: const Text(
+                      '关于',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    // 为ExpansionTile添加非线性动画
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    collapsedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            if (_packageInfo != null) ...[
+                              ListTile(
+                                title: const Text('应用名称'),
+                                subtitle: Text(_packageInfo!.appName),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              ListTile(
+                                title: const Text('版本信息'),
+                                subtitle: Text('v${_packageInfo!.version} (构建号: ${_packageInfo!.buildNumber})'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              ListTile(
+                                title: const Text('构建日期'),
+                                subtitle: Text(_buildDate),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ],
+                            const Divider(),
+                            const ListTile(
+                              title: Text('开发者'),
+                              subtitle: Text('Chidc, Manus AI'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            const ListTile(
+                              title: Text('项目主页'),
+                              subtitle: Text('github.com/ChidcGithub/mlsharp-flutter-reconstruction'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // 外观设置卡片
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -157,9 +325,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       '外观',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    collapseIconColor: colorScheme.primary,
-                    expandIconColor: colorScheme.primary,
-                    iconPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+
+                    // 为ExpansionTile添加非线性动画
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    collapsedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -253,6 +426,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: const Text(
                       '连接设置',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    // 为ExpansionTile添加非线性动画
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    collapsedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     children: [
                       Padding(
@@ -393,6 +573,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       '数据管理',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
+                    // 为ExpansionTile添加非线性动画
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    collapsedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -412,276 +599,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // 更新检查卡片
-              Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    initiallyExpanded: false,
-                    maintainState: true,
-                    tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.tertiaryContainer,
-                      ),
-                      child: Icon(
-                        Icons.system_update,
-                        color: colorScheme.onTertiaryContainer,
-                      ),
-                    ),
-                    title: const Text(
-                      '更新检查',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_isCheckingUpdate)
-                              const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                                    SizedBox(width: 12),
-                                    Text('正在检查更新...'),
-                                  ],
-                                ),
-                              )
-                            else ...[
-                              if (_latestVersion != null)
-                                Card(
-                                  color: _hasUpdate 
-                                      ? colorScheme.primaryContainer 
-                                      : colorScheme.surfaceContainerHighest,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _hasUpdate ? '有新版本可用' : '已是最新版本',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: _hasUpdate ? colorScheme.primary : colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text('当前版本: v${_packageInfo?.version ?? '未知'} (构建号: ${_packageInfo?.buildNumber ?? '未知'})'),
-                                        if (_hasUpdate && _latestVersion != null) ...[
-                                          Text('最新版本: v${_latestVersion!}'),
-                                          const SizedBox(height: 8),
-                                          if (_updateUrl != null)
-                                            FilledButton.icon(
-                                              onPressed: () => _openUpdateUrl(),
-                                              icon: const Icon(Icons.open_in_new, size: 16),
-                                              label: const Text('前往下载'),
-                                              style: FilledButton.styleFrom(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                              ),
-                                            ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              FilledButton.tonal(
-                                onPressed: _checkForUpdates,
-                                child: const Text('检查更新'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // 关于应用卡片
-              Card(
-                margin: const EdgeInsets.only(bottom: 32),
-                elevation: 2,
-                child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    initiallyExpanded: false,
-                    maintainState: true,
-                    tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.surfaceContainerHighest,
-                      ),
-                      child: Icon(
-                        Icons.info_outline,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    title: const Text(
-                      '关于',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: Column(
-                          children: [
-                            if (_packageInfo != null) ...[
-                              ListTile(
-                                title: const Text('应用名称'),
-                                subtitle: Text(_packageInfo!.appName),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              ListTile(
-                                title: const Text('版本信息'),
-                                subtitle: Text('v${_packageInfo!.version} (构建号: ${_packageInfo!.buildNumber})'),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              ListTile(
-                                title: const Text('构建日期'),
-                                subtitle: Text(_buildDate),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ],
-                            const Divider(),
-                            const ListTile(
-                              title: Text('开发者'),
-                              subtitle: Text('Chidc, Manus AI'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            const ListTile(
-                              title: Text('项目主页'),
-                              subtitle: Text('github.com/ChidcGithub/mlsharp-flutter-reconstruction'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 应用信息卡片
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.surfaceContainerHighest,
-                            ),
-                            child: Icon(
-                              Icons.info_outline,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '应用信息',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      FutureBuilder<PackageInfo>(
-                        future: _getPackageInfo(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            final packageInfo = snapshot.data!;
-                            return Column(
-                              children: [
-                                ListTile(
-                                  title: const Text('版本号'),
-                                  subtitle: Text(packageInfo.version),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                ListTile(
-                                  title: const Text('构建号'),
-                                  subtitle: Text(packageInfo.buildNumber),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                ListTile(
-                                  title: const Text('构建日期'),
-                                  subtitle: Text(_getBuildDate()),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ],
-                            );
-                          } else {
-                            return const ListTile(
-                              title: Text('加载中...'),
-                              contentPadding: EdgeInsets.zero,
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 更新检查卡片
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.primaryContainer,
-                            ),
-                            child: Icon(
-                              Icons.update,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            '更新检查',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        title: const Text('检查更新'),
-                        subtitle: const Text('检查是否有新版本可用'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        contentPadding: EdgeInsets.zero,
-                        onTap: _checkForUpdates,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
             ],
           );
         },

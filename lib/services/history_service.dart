@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 
 enum ViewerType { threejs, gaussianSplatter, webview }
 
@@ -62,7 +63,7 @@ class HistoryItem {
   }
 }
 
-class HistoryService {
+class HistoryService with ChangeNotifier {
   static const String _historyKey = 'history_items';
   static const String _modelsDir = 'model_history';
 
@@ -90,6 +91,11 @@ class HistoryService {
     // 按时间倒序排列（最新的在前）
     items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return items;
+  }
+
+  Future<void> reloadHistory() async {
+    // 通知监听器数据已更改，这将触发UI重建
+    notifyListeners();
   }
 
   Future<void> addToHistory(HistoryItem item) async {
@@ -165,9 +171,4 @@ class HistoryService {
   }
 
   String getModelsPath() => _modelsPath;
-
-  Future<void> saveModelLocally(String modelUrl, String localFileName) async {
-    // 这个方法将在下载模型时被调用
-    // 实际的下载和保存逻辑将在需要的地方实现
-  }
 }

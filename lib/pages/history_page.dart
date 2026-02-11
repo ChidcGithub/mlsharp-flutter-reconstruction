@@ -43,11 +43,8 @@ class _HistoryPageState extends State<HistoryPage> {
       builder: (context, historyService, child) {
         return RefreshIndicator(
           onRefresh: () async {
-            // 刷新历史记录列表 - 添加一个短暂延迟以提供视觉反馈
-            await Future.delayed(const Duration(milliseconds: 500));
-            if (mounted) {
-              setState(() {});
-            }
+            // 刷新历史记录列表 - 通知HistoryService数据已更改，触发UI重建
+            historyService.reloadHistory();
           },
           child: FutureBuilder<List<HistoryItem>>(
             future: historyService.getHistory(),
