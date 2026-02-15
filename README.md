@@ -22,7 +22,7 @@
          \/____/                  \/____/          \/____/                  \/____/                  \/____/                  \|___|                                    
 ```    
 
-# MLSharp 3D Maker - Flutter 重构版
+# MLSharp 3D Maker For Android - Flutter Reconstruction
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-green.svg)
@@ -35,7 +35,7 @@
 
 ## 项目简介
 
-**MLSharp 3D Maker**（代号：**Ansharp**）是基于 Flutter 框架对原始 [MLSharp-3D-Maker-GPU](https://github.com/ChidcGithub/MLSharp-3D-Maker-GPU) 项目的重构版本。它旨在提供一个跨平台、高性能的移动端应用，用于从单张照片生成高质量的 3D 高斯泼溅（3D Gaussian Splatting）模型。本重构版特别优化了对高通骁龙（Snapdragon）NPU 的支持，以实现更快的本地推理速度。
+**MLSharp 3D Maker For Android**（代号：**Ansharp**）是基于 Flutter 框架对原始 [MLSharp-3D-Maker-GPU](https://github.com/ChidcGithub/MLSharp-3D-Maker-GPU) 项目的重构版本。它旨在提供一个跨平台、高性能的移动端应用，用于从单张照片生成高质量的 3D 高斯泼溅（3D Gaussian Splatting）模型。本重构版特别优化了对高通骁龙（Snapdragon）NPU 的支持，以实现更快的本地推理速度。
 
 ## 主要特性
 
