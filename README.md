@@ -24,6 +24,8 @@
 
 # MLSharp 3D Maker For Android - Flutter Reconstruction
 
+## Development pauseduntil 2026.7.1
+
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
